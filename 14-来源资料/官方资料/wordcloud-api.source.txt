@@ -1,0 +1,413 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>wordcloud.WordCloud &mdash; wordcloud 1.8.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/wordcloud.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/basic.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery-dataframe.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="wordcloud.ImageColorGenerator" href="wordcloud.ImageColorGenerator.html" />
+    <link rel="prev" title="API Reference" href="../references.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> wordcloud
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.8.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../references.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">wordcloud.WordCloud</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wordcloud.ImageColorGenerator.html">wordcloud.ImageColorGenerator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wordcloud.random_color_func.html">wordcloud.random_color_func</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wordcloud.get_single_color_func.html">wordcloud.get_single_color_func</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../auto_examples/index.html">Gallery of Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Contributor Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../make_a_release.html">Making a release</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">wordcloud</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../references.html">API Reference</a> &raquo;</li>
+        
+      <li>wordcloud.WordCloud</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/generated/wordcloud.WordCloud.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="wordcloud-wordcloud">
+<h1>wordcloud.WordCloud<a class="headerlink" href="#wordcloud-wordcloud" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="wordcloud.WordCloud">
+<em class="property">class </em><code class="sig-prename descclassname">wordcloud.</code><code class="sig-name descname">WordCloud</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">font_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">width</span><span class="o">=</span><span class="default_value">400</span></em>, <em class="sig-param"><span class="n">height</span><span class="o">=</span><span class="default_value">200</span></em>, <em class="sig-param"><span class="n">margin</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">ranks_only</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">prefer_horizontal</span><span class="o">=</span><span class="default_value">0.9</span></em>, <em class="sig-param"><span class="n">mask</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">scale</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">color_func</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">max_words</span><span class="o">=</span><span class="default_value">200</span></em>, <em class="sig-param"><span class="n">min_font_size</span><span class="o">=</span><span class="default_value">4</span></em>, <em class="sig-param"><span class="n">stopwords</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">random_state</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">background_color</span><span class="o">=</span><span class="default_value">'black'</span></em>, <em class="sig-param"><span class="n">max_font_size</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">font_step</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">mode</span><span class="o">=</span><span class="default_value">'RGB'</span></em>, <em class="sig-param"><span class="n">relative_scaling</span><span class="o">=</span><span class="default_value">'auto'</span></em>, <em class="sig-param"><span class="n">regexp</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">collocations</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">colormap</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">normalize_plurals</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">contour_width</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">contour_color</span><span class="o">=</span><span class="default_value">'black'</span></em>, <em class="sig-param"><span class="n">repeat</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">include_numbers</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">min_word_length</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">collocation_threshold</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/wordcloud/wordcloud.html#WordCloud"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wordcloud.WordCloud" title="Permalink to this definition">¶</a></dt>
+<dd><p>Word cloud object for generating and drawing.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>font_path</strong><span class="classifier">string</span></dt><dd><p>Font path to the font that will be used (OTF or TTF).
+Defaults to DroidSansMono path on a Linux machine. If you are on
+another OS or don’t have this font, you need to adjust this path.</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">int (default=400)</span></dt><dd><p>Width of the canvas.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">int (default=200)</span></dt><dd><p>Height of the canvas.</p>
+</dd>
+<dt><strong>prefer_horizontal</strong><span class="classifier">float (default=0.90)</span></dt><dd><p>The ratio of times to try horizontal fitting as opposed to vertical.
+If prefer_horizontal &lt; 1, the algorithm will try rotating the word
+if it doesn’t fit. (There is currently no built-in way to get only
+vertical words.)</p>
+</dd>
+<dt><strong>mask</strong><span class="classifier">nd-array or None (default=None)</span></dt><dd><p>If not None, gives a binary mask on where to draw words. If mask is not
+None, width and height will be ignored and the shape of mask will be
+used instead. All white (#FF or #FFFFFF) entries will be considerd
+“masked out” while other entries will be free to draw on. [This
+changed in the most recent version!]</p>
+</dd>
+<dt><strong>contour_width: float (default=0)</strong></dt><dd><p>If mask is not None and contour_width &gt; 0, draw the mask contour.</p>
+</dd>
+<dt><strong>contour_color: color value (default=”black”)</strong></dt><dd><p>Mask contour color.</p>
+</dd>
+<dt><strong>scale</strong><span class="classifier">float (default=1)</span></dt><dd><p>Scaling between computation and drawing. For large word-cloud images,
+using scale instead of larger canvas size is significantly faster, but
+might lead to a coarser fit for the words.</p>
+</dd>
+<dt><strong>min_font_size</strong><span class="classifier">int (default=4)</span></dt><dd><p>Smallest font size to use. Will stop when there is no more room in this
+size.</p>
+</dd>
+<dt><strong>font_step</strong><span class="classifier">int (default=1)</span></dt><dd><p>Step size for the font. font_step &gt; 1 might speed up computation but
+give a worse fit.</p>
+</dd>
+<dt><strong>max_words</strong><span class="classifier">number (default=200)</span></dt><dd><p>The maximum number of words.</p>
+</dd>
+<dt><strong>stopwords</strong><span class="classifier">set of strings or None</span></dt><dd><p>The words that will be eliminated. If None, the build-in STOPWORDS
+list will be used. Ignored if using generate_from_frequencies.</p>
+</dd>
+<dt><strong>background_color</strong><span class="classifier">color value (default=”black”)</span></dt><dd><p>Background color for the word cloud image.</p>
+</dd>
+<dt><strong>max_font_size</strong><span class="classifier">int or None (default=None)</span></dt><dd><p>Maximum font size for the largest word. If None, height of the image is
+used.</p>
+</dd>
+<dt><strong>mode</strong><span class="classifier">string (default=”RGB”)</span></dt><dd><p>Transparent background will be generated when mode is “RGBA” and
+background_color is None.</p>
+</dd>
+<dt><strong>relative_scaling</strong><span class="classifier">float (default=’auto’)</span></dt><dd><p>Importance of relative word frequencies for font-size.  With
+relative_scaling=0, only word-ranks are considered.  With
+relative_scaling=1, a word that is twice as frequent will have twice
+the size.  If you want to consider the word frequencies and not only
+their rank, relative_scaling around .5 often looks good.
+If ‘auto’ it will be set to 0.5 unless repeat is true, in which
+case it will be set to 0.</p>
+</dd>
+<dt><strong>color_func</strong><span class="classifier">callable, default=None</span></dt><dd><p>Callable with parameters word, font_size, position, orientation,
+font_path, random_state that returns a PIL color for each word.
+Overwrites “colormap”.
+See colormap for specifying a matplotlib colormap instead.
+To create a word cloud with a single color, use
+<code class="docutils literal notranslate"><span class="pre">color_func=lambda</span> <span class="pre">*args,</span> <span class="pre">**kwargs:</span> <span class="pre">&quot;white&quot;</span></code>.
+The single color can also be specified using RGB code. For example
+<code class="docutils literal notranslate"><span class="pre">color_func=lambda</span> <span class="pre">*args,</span> <span class="pre">**kwargs:</span> <span class="pre">(255,0,0)</span></code> sets color to red.</p>
+</dd>
+<dt><strong>regexp</strong><span class="classifier">string or None (optional)</span></dt><dd><p>Regular expression to split the input text into tokens in process_text.
+If None is specified, <code class="docutils literal notranslate"><span class="pre">r&quot;\w[\w']+&quot;</span></code> is used. Ignored if using
+generate_from_frequencies.</p>
+</dd>
+<dt><strong>collocations</strong><span class="classifier">bool, default=True</span></dt><dd><p>Whether to include collocations (bigrams) of two words. Ignored if using
+generate_from_frequencies.</p>
+</dd>
+<dt><strong>colormap</strong><span class="classifier">string or matplotlib colormap, default=”viridis”</span></dt><dd><p>Matplotlib colormap to randomly draw colors from for each word.
+Ignored if “color_func” is specified.</p>
+</dd>
+<dt><strong>normalize_plurals</strong><span class="classifier">bool, default=True</span></dt><dd><p>Whether to remove trailing ‘s’ from words. If True and a word
+appears with and without a trailing ‘s’, the one with trailing ‘s’
+is removed and its counts are added to the version without
+trailing ‘s’ – unless the word ends with ‘ss’. Ignored if using
+generate_from_frequencies.</p>
+</dd>
+<dt><strong>repeat</strong><span class="classifier">bool, default=False</span></dt><dd><p>Whether to repeat words and phrases until max_words or min_font_size
+is reached.</p>
+</dd>
+<dt><strong>include_numbers</strong><span class="classifier">bool, default=False</span></dt><dd><p>Whether to include numbers as phrases or not.</p>
+</dd>
+<dt><strong>min_word_length</strong><span class="classifier">int, default=0</span></dt><dd><p>Minimum number of letters a word must have to be included.</p>
+</dd>
+<dt><strong>collocation_threshold: int, default=30</strong></dt><dd><p>Bigrams must have a Dunning likelihood collocation score greater than this
+parameter to be counted as bigrams. Default of 30 is arbitrary.</p>
+<p>See Manning, C.D., Manning, C.D. and Schütze, H., 1999. Foundations of
+Statistical Natural Language Processing. MIT press, p. 162
+<a class="reference external" href="https://nlp.stanford.edu/fsnlp/promo/colloc.pdf#page=22">https://nlp.stanford.edu/fsnlp/promo/colloc.pdf#page=22</a></p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Larger canvases with make the code significantly slower. If you need a
+large word cloud, try a lower canvas size, and set the scale parameter.</p>
+<p>The algorithm might give more weight to the ranking of the words
+than their actual frequencies, depending on the <code class="docutils literal notranslate"><span class="pre">max_font_size</span></code> and the
+scaling heuristic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>``words_``</strong><span class="classifier">dict of string to float</span></dt><dd><p>Word tokens with associated frequency.</p>
+</dd>
+<dt><strong>``layout_``</strong><span class="classifier">list of tuples (string, int, (int, int), int, color))</span></dt><dd><p>Encodes the fitted word cloud. Encodes for each word the string, font
+size, position, orientation and color.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fit_words</span></code>(frequencies)</p></td>
+<td><p>Create a word_cloud from words and frequencies.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate</span></code>(text)</p></td>
+<td><p>Generate wordcloud from text.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_from_frequencies</span></code>(frequencies[, …])</p></td>
+<td><p>Create a word_cloud from words and frequencies.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_from_text</span></code>(text)</p></td>
+<td><p>Generate wordcloud from text.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_text</span></code>(text)</p></td>
+<td><p>Splits a long text into words, eliminates the stopwords.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">recolor</span></code>([random_state, color_func, colormap])</p></td>
+<td><p>Recolor existing layout.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_array</span></code>()</p></td>
+<td><p>Convert to numpy array.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_file</span></code>(filename)</p></td>
+<td><p>Export to image file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_svg</span></code>([embed_font, optimize_embedded_font, …])</p></td>
+<td><p>Export to SVG.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 55%" />
+<col style="width: 45%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>to_html</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>to_image</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt id="wordcloud.WordCloud.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">font_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">width</span><span class="o">=</span><span class="default_value">400</span></em>, <em class="sig-param"><span class="n">height</span><span class="o">=</span><span class="default_value">200</span></em>, <em class="sig-param"><span class="n">margin</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">ranks_only</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">prefer_horizontal</span><span class="o">=</span><span class="default_value">0.9</span></em>, <em class="sig-param"><span class="n">mask</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">scale</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">color_func</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">max_words</span><span class="o">=</span><span class="default_value">200</span></em>, <em class="sig-param"><span class="n">min_font_size</span><span class="o">=</span><span class="default_value">4</span></em>, <em class="sig-param"><span class="n">stopwords</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">random_state</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">background_color</span><span class="o">=</span><span class="default_value">'black'</span></em>, <em class="sig-param"><span class="n">max_font_size</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">font_step</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">mode</span><span class="o">=</span><span class="default_value">'RGB'</span></em>, <em class="sig-param"><span class="n">relative_scaling</span><span class="o">=</span><span class="default_value">'auto'</span></em>, <em class="sig-param"><span class="n">regexp</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">collocations</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">colormap</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">normalize_plurals</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">contour_width</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">contour_color</span><span class="o">=</span><span class="default_value">'black'</span></em>, <em class="sig-param"><span class="n">repeat</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">include_numbers</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">min_word_length</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">collocation_threshold</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/wordcloud/wordcloud.html#WordCloud.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wordcloud.WordCloud.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="wordcloud.ImageColorGenerator.html" class="btn btn-neutral float-right" title="wordcloud.ImageColorGenerator" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../references.html" class="btn btn-neutral float-left" title="API Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Andreas Mueller
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

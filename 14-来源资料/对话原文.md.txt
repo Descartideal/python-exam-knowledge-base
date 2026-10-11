@@ -1,0 +1,656 @@
+# 分享对话原文
+
+来源：https://chatgpt.com/share/6ac99e92-92e4-83ec-86a7-02250f7bd64c
+
+## user
+
+第三方库考试范围：turtle、numpy、pandas、matplotlib、jieba、wordcloud、opencv @全体成员&#x20;
+
+
+**python语言与系统设计（7-9班）**
+
+
+
+
+
+这大概会考哪些东西？如何建立一个本地知识库？
+
+---
+
+## user
+
+Original custom instructions no longer available
+
+---
+
+## assistant
+
+我会按这 7 个库整理最可能出现的题型和必会 API，再给你一套适合 Windows、离线可用、支持模糊搜索的本地知识库方案。重点放在考试时能快速找到函数用法和代码模板。
+
+---
+
+## assistant
+
+从这份通知来看，这门「Python 语言与系统设计」的第三方库考试范围相当广，但如果是普通本科 Python 课程，**大概率重点不是算法原理，而是能否正确调用库的 API，完成指定的数据处理、绘图或图像处理任务。**
+
+我建议采用两条路线：
+
+1. **备考：** 掌握 7 个库最常见的函数、参数、返回值和典型例题。
+2. **知识库：** 搭建一套完全离线、支持全文检索和模糊查询的 Python API + 代码模板库。
+
+你用 Windows 11，平时也习惯文件夹配合文本文件，因此没必要弄复杂的 RAG、向量数据库或本地大模型。对这种考试，传统全文索引往往更快、更准确。
+
+## 一、这 7 个库大概会考什么？
+
+<text color="secondary" size="xs">下面的重点程度是根据常见本科 Python 课程推测的，不是老师确认的命题范围。</text>
+
+| 库 | 重点程度（估计） | 可能考查的内容 |
+|---|---|---|
+| `turtle` | 中 | 绘制几何图形、循环、颜色、画笔控制 |
+| `numpy` | 很高 | 数组创建、切片、变形、运算、统计 |
+| `pandas` | 很高 | DataFrame、CSV、筛选、分组、排序、缺失值 |
+| `matplotlib` | 很高 | 折线图、柱状图、散点图、直方图、饼图 |
+| `jieba` | 中 | 中文分词、词频统计、关键词提取 |
+| `wordcloud` | 中 | 生成词云、字体、颜色、输出图片 |
+| `opencv` (`cv2`) | 高 | 图片读取、灰度化、缩放、裁剪、边缘检测 |
+
+注意：`turtle` 实际上是 Python 标准库，不需要另外用 pip 安装。
+
+## 二、各个库的重点 API
+
+{@body const topics = [
+{title:"turtle",sub:"基础绘图",items:[["forward(d) / fd(d)","向前移动"],["backward(d) / bk(d)","向后移动"],["left(a) / right(a)","旋转角度"],["penup() / pendown()","抬笔和落笔"],["goto(x,y) / setheading(a)","指定坐标和方向"],["color() / pencolor() / fillcolor()","设置颜色"],["begin_fill() / end_fill()","填充图形"],["circle(r) / speed(n)","画圆和控制速度"]],task:"用循环画五角星、正多边形、同心圆、螺旋线。"},
+{title:"numpy",sub:"数值计算",items:[["np.array()","创建数组"],["np.arange() / np.linspace()","生成数值序列"],["np.zeros() / np.ones()","创建特殊数组"],["reshape() / flatten()","数组变形与展平"],["a[1:4] / a[:, 0]","切片与索引"],["np.sum() / np.mean() / np.max()","统计"],["axis=0 / axis=1","按列或按行计算（二维）"],["np.dot() / @","矩阵乘法"],["np.where() / np.sort()","条件选择与排序"]],task:"给定一个二维数组，计算各行平均值、各列最大值，筛选满足条件的元素。"},
+{title:"pandas",sub:"表格处理",items:[["pd.Series() / pd.DataFrame()","建立数据结构"],["pd.read_csv() / pd.read_excel()","读取文件"],["df.head() / df.info() / df.describe()","查看数据"],["df.loc[] / df.iloc[]","按标签 / 位置索引"],["df[df['成绩'] >= 60]","条件筛选"],["df.sort_values()","排序"],["df.groupby().agg()","分组统计"],["df.isna() / df.fillna() / df.dropna()","处理缺失值"],["df.to_csv()","导出结果"]],task:"读取学生成绩 CSV，筛选不及格者，按班级求平均分并排序输出。"},
+{title:"matplotlib",sub:"数据可视化",items:[["plt.plot()","折线图"],["plt.bar() / plt.barh()","柱状图"],["plt.scatter()","散点图"],["plt.hist()","直方图"],["plt.pie()","饼图"],["plt.title() / plt.xlabel() / plt.ylabel()","标题与坐标轴"],["plt.legend() / plt.grid()","图例与网格"],["plt.subplot() / plt.subplots()","多个子图"],["plt.savefig() / plt.show()","保存与显示"]],task:"将一组考试成绩绘制为柱状图或折线图，设置标题、中文标签和图例。"},
+{title:"jieba",sub:"中文分词",items:[["jieba.cut()","分词迭代器"],["jieba.lcut()","返回分词列表"],["jieba.cut_for_search()","搜索引擎模式"],["jieba.add_word()","添加自定义词"],["jieba.load_userdict()","加载用户词典"],["jieba.analyse.extract_tags()","TF-IDF 关键词提取"],["jieba.analyse.textrank()","TextRank 关键词提取"]],task:"读取中文文章，完成分词，去掉停用词，用 Counter 统计出现最多的 10 个词。"},
+{title:"wordcloud",sub:"词云生成",items:[["WordCloud()","创建词云对象"],["font_path","设置中文字体"],["width / height","词云尺寸"],["background_color","背景颜色"],["max_words / stopwords","词语限制与停用词"],["generate()","根据文本生成"],["generate_from_frequencies()","根据词频生成"],["to_file() / plt.imshow()","保存或显示"],["mask","指定词云形状"]],task:"读取文章，使用 jieba 分词和 Counter 统计，生成中文词云图片。"},
+{title:"opencv / cv2",sub:"图像处理",items:[["cv2.imread() / cv2.imwrite()","读取与保存图片"],["cv2.imshow() / cv2.waitKey()","显示图片与等待按键"],["cv2.cvtColor()","颜色空间转换"],["cv2.resize()","缩放图片"],["img[y1:y2, x1:x2]","裁剪图像"],["cv2.threshold()","图像二值化"],["cv2.GaussianBlur()","高斯模糊"],["cv2.Canny()","边缘检测"],["cv2.rectangle() / cv2.circle()","绘制形状"]],task:"读取彩色图片，转灰度、调整尺寸、提取边缘并保存结果。"}
+]}
+{@body const [active,setActive]=DIL.useState("numpy")}
+<box border radius="xl" padding={3} gap={3}>
+  <row align="center" justify="between">
+    **七个库的 API 速查**
+    <text color="secondary" size="xs">点击切换</text>
+  </row>
+  <row wrap="wrap" gap={1}>
+    {#each topics as t}
+      <button key={t.title} size="sm" color={active===t.title?"primary":"secondary"} variant={active===t.title?"solid":"outline"} onClick={()=>setActive(t.title)}>{t.title}</button>
+    {/each}
+  </row>
+  {#each topics.filter(t=>t.title===active) as t}
+    <box key={t.title} gap={2}>
+      <row align="baseline" justify="between">
+        <title size="lg">{t.title}</title>
+        <text color="secondary" size="xs">{t.sub}</text>
+      </row>
+      <table>
+        <table-row><table-cell width="52%"><text weight="medium" size="xs">函数 / 参数</text></table-cell><table-cell><text weight="medium" size="xs">用途</text></table-cell></table-row>
+        {#each t.items as item,i}
+          <table-row><table-cell><text size="sm">{item[0]}</text></table-cell><table-cell><text size="sm">{item[1]}</text></table-cell></table-row>
+        {/each}
+      </table>
+      <box background="surface-secondary" radius="lg" padding={3} gap={1}>
+        <text weight="medium" size="sm">典型上机题</text>
+        <text size="sm">{t.task}</text>
+      </box>
+    </box>
+  {/each}
+</box>
+
+### 我认为特别值得练的综合题
+
+**综合题 A：学生成绩分析**
+
+读取 CSV → Pandas 清洗、筛选、分组 → NumPy 计算 → Matplotlib 绘图。
+
+**综合题 B：中文文本词云**
+
+读取 TXT → jieba 分词 → 过滤停用词 → `Counter` 统计词频 → WordCloud 生成图片。
+
+**综合题 C：图像处理**
+
+OpenCV 读取图片 → 灰度化 → 缩放 → 二值化或边缘检测 → 保存图片。
+
+这三类题可以串联起 6 个库，复习效率通常比零散背 API 更高。
+
+
+
+---
+
+## assistant
+
+从这份通知来看，这门「Python 语言与系统设计」的第三方库考试范围相当广，但如果是普通本科 Python 课程，**大概率重点不是算法原理，而是能否正确调用库的 API，完成指定的数据处理、绘图或图像处理任务。**
+
+我建议采用两条路线：
+
+1. **备考：** 掌握 7 个库最常见的函数、参数、返回值和典型例题。
+2. **知识库：** 搭建一套完全离线、支持全文检索和模糊查询的 Python API + 代码模板库。
+
+你用 Windows 11，平时也习惯文件夹配合文本文件，因此没必要弄复杂的 RAG、向量数据库或本地大模型。对这种考试，传统全文索引往往更快、更准确。
+
+## 一、这 7 个库大概会考什么？
+
+<text color="secondary" size="xs">下面的重点程度是根据常见本科 Python 课程推测的，不是老师确认的命题范围。</text>
+
+| 库 | 重点程度（估计） | 可能考查的内容 |
+|---|---|---|
+| `turtle` | 中 | 绘制几何图形、循环、颜色、画笔控制 |
+| `numpy` | 很高 | 数组创建、切片、变形、运算、统计 |
+| `pandas` | 很高 | DataFrame、CSV、筛选、分组、排序、缺失值 |
+| `matplotlib` | 很高 | 折线图、柱状图、散点图、直方图、饼图 |
+| `jieba` | 中 | 中文分词、词频统计、关键词提取 |
+| `wordcloud` | 中 | 生成词云、字体、颜色、输出图片 |
+| `opencv` (`cv2`) | 高 | 图片读取、灰度化、缩放、裁剪、边缘检测 |
+
+注意：`turtle` 实际上是 Python 标准库，不需要另外用 pip 安装。
+
+## 二、各个库的重点 API
+
+{@body const topics = [
+{title:"turtle",sub:"基础绘图",items:[["forward(d) / fd(d)","向前移动"],["backward(d) / bk(d)","向后移动"],["left(a) / right(a)","旋转角度"],["penup() / pendown()","抬笔和落笔"],["goto(x,y) / setheading(a)","指定坐标和方向"],["color() / pencolor() / fillcolor()","设置颜色"],["begin_fill() / end_fill()","填充图形"],["circle(r) / speed(n)","画圆和控制速度"]],task:"用循环画五角星、正多边形、同心圆、螺旋线。"},
+{title:"numpy",sub:"数值计算",items:[["np.array()","创建数组"],["np.arange() / np.linspace()","生成数值序列"],["np.zeros() / np.ones()","创建特殊数组"],["reshape() / flatten()","数组变形与展平"],["a[1:4] / a[:, 0]","切片与索引"],["np.sum() / np.mean() / np.max()","统计"],["axis=0 / axis=1","按列或按行计算（二维）"],["np.dot() / @","矩阵乘法"],["np.where() / np.sort()","条件选择与排序"]],task:"给定一个二维数组，计算各行平均值、各列最大值，筛选满足条件的元素。"},
+{title:"pandas",sub:"表格处理",items:[["pd.Series() / pd.DataFrame()","建立数据结构"],["pd.read_csv() / pd.read_excel()","读取文件"],["df.head() / df.info() / df.describe()","查看数据"],["df.loc[] / df.iloc[]","按标签 / 位置索引"],["df[df['成绩'] >= 60]","条件筛选"],["df.sort_values()","排序"],["df.groupby().agg()","分组统计"],["df.isna() / df.fillna() / df.dropna()","处理缺失值"],["df.to_csv()","导出结果"]],task:"读取学生成绩 CSV，筛选不及格者，按班级求平均分并排序输出。"},
+{title:"matplotlib",sub:"数据可视化",items:[["plt.plot()","折线图"],["plt.bar() / plt.barh()","柱状图"],["plt.scatter()","散点图"],["plt.hist()","直方图"],["plt.pie()","饼图"],["plt.title() / plt.xlabel() / plt.ylabel()","标题与坐标轴"],["plt.legend() / plt.grid()","图例与网格"],["plt.subplot() / plt.subplots()","多个子图"],["plt.savefig() / plt.show()","保存与显示"]],task:"将一组考试成绩绘制为柱状图或折线图，设置标题、中文标签和图例。"},
+{title:"jieba",sub:"中文分词",items:[["jieba.cut()","分词迭代器"],["jieba.lcut()","返回分词列表"],["jieba.cut_for_search()","搜索引擎模式"],["jieba.add_word()","添加自定义词"],["jieba.load_userdict()","加载用户词典"],["jieba.analyse.extract_tags()","TF-IDF 关键词提取"],["jieba.analyse.textrank()","TextRank 关键词提取"]],task:"读取中文文章，完成分词，去掉停用词，用 Counter 统计出现最多的 10 个词。"},
+{title:"wordcloud",sub:"词云生成",items:[["WordCloud()","创建词云对象"],["font_path","设置中文字体"],["width / height","词云尺寸"],["background_color","背景颜色"],["max_words / stopwords","词语限制与停用词"],["generate()","根据文本生成"],["generate_from_frequencies()","根据词频生成"],["to_file() / plt.imshow()","保存或显示"],["mask","指定词云形状"]],task:"读取文章，使用 jieba 分词和 Counter 统计，生成中文词云图片。"},
+{title:"opencv / cv2",sub:"图像处理",items:[["cv2.imread() / cv2.imwrite()","读取与保存图片"],["cv2.imshow() / cv2.waitKey()","显示图片与等待按键"],["cv2.cvtColor()","颜色空间转换"],["cv2.resize()","缩放图片"],["img[y1:y2, x1:x2]","裁剪图像"],["cv2.threshold()","图像二值化"],["cv2.GaussianBlur()","高斯模糊"],["cv2.Canny()","边缘检测"],["cv2.rectangle() / cv2.circle()","绘制形状"]],task:"读取彩色图片，转灰度、调整尺寸、提取边缘并保存结果。"}
+]}
+{@body const [active,setActive]=DIL.useState("numpy")}
+<box border radius="xl" padding={3} gap={3}>
+  <row align="center" justify="between">
+    **七个库的 API 速查**
+    <text color="secondary" size="xs">点击切换</text>
+  </row>
+  <row wrap="wrap" gap={1}>
+    {#each topics as t}
+      <button key={t.title} size="sm" color={active===t.title?"primary":"secondary"} variant={active===t.title?"solid":"outline"} onClick={()=>setActive(t.title)}>{t.title}</button>
+    {/each}
+  </row>
+  {#each topics.filter(t=>t.title===active) as t}
+    <box key={t.title} gap={2}>
+      <row align="baseline" justify="between">
+        <title size="lg">{t.title}</title>
+        <text color="secondary" size="xs">{t.sub}</text>
+      </row>
+      <table>
+        <table-row><table-cell width="52%"><text weight="medium" size="xs">函数 / 参数</text></table-cell><table-cell><text weight="medium" size="xs">用途</text></table-cell></table-row>
+        {#each t.items as item,i}
+          <table-row><table-cell><text size="sm">{item[0]}</text></table-cell><table-cell><text size="sm">{item[1]}</text></table-cell></table-row>
+        {/each}
+      </table>
+      <box background="surface-secondary" radius="lg" padding={3} gap={1}>
+        <text weight="medium" size="sm">典型上机题</text>
+        <text size="sm">{t.task}</text>
+      </box>
+    </box>
+  {/each}
+</box>
+
+### 我认为特别值得练的综合题
+
+**综合题 A：学生成绩分析**
+
+读取 CSV → Pandas 清洗、筛选、分组 → NumPy 计算 → Matplotlib 绘图。
+
+**综合题 B：中文文本词云**
+
+读取 TXT → jieba 分词 → 过滤停用词 → `Counter` 统计词频 → WordCloud 生成图片。
+
+**综合题 C：图像处理**
+
+OpenCV 读取图片 → 灰度化 → 缩放 → 二值化或边缘检测 → 保存图片。
+
+这三类题可以串联起 6 个库，复习效率通常比零散背 API 更高。
+
+## 三、如何建立本地 Python 考试知识库？
+
+我比较推荐下面这套组合。
+
+<box gap={3}>
+  <row align="start" gap={3}>
+    <AsyncImage query="DocFetcher desktop search application Windows screenshot search results document preview" aspectRatio="5:4" maxWidth="124px"/>
+    <box flex="1" gap={1}>
+      <row align="center" wrap="wrap" gap={2}>
+        **<Entity category="software" value="DocFetcher"/>**
+        <badge color="success">最推荐</badge>
+      </row>
+      离线全文索引，适合大量 TXT、文档和代码笔记。支持通配符、布尔查询和真正的近似词匹配，例如 `roam~`。<Cite refs={["turn504002search5","turn197646search8"]}/>
+      <text size="sm"><Link url="https://docfetcher.sourceforge.io/download/" title="官方下载"/></text>
+    </box>
+  </row>
+  <divider color="subtle"/>
+  <row align="start" gap={3}>
+    <AsyncImage query="Zeal offline documentation browser app screenshot Python documentation search" aspectRatio="5:4" maxWidth="124px"/>
+    <box flex="1" gap={1}>
+      **<Entity category="software" value="Zeal"/>**
+
+      专门查函数和官方 API 文档。安装后，在 `File → Docset Library` 选择所需文档下载，之后即可离线搜索。可通过 `python:关键词` 限定文档范围。<Cite refs={["turn800419search6"]}/>
+      <text size="sm"><Link url="https://zealdocs.org/" title="官方网站"/></text>
+    </box>
+  </row>
+  <divider color="subtle"/>
+  <row align="start" gap={3}>
+    <AsyncImage query="Visual Studio Code editor global search sidebar code search results screenshot" aspectRatio="5:4" maxWidth="124px"/>
+    <box flex="1" gap={1}>
+      **<Entity category="software" value="Visual Studio Code"/>**
+
+      编写、管理和检索自己的 `.txt`、`.py` 文件。`Ctrl+Shift+F` 可以搜索整个文件夹，直接定位匹配的代码行。
+    </box>
+  </row>
+</box>
+
+其中 **DocFetcher 负责模糊搜索，VSCode 负责编辑和查看代码，Zeal 负责补充官方文档**。三者可以独立运行，不需要数据库服务器。
+
+### 第一步：准备知识库目录
+
+建议建立如下目录：
+
+```text
+D:\PythonExam\
+│
+├── 00-总索引.txt
+├── 01-Python基础\
+│   ├── 字符串.txt
+│   ├── 列表字典集合.txt
+│   ├── 文件读写.txt
+│   └── 异常处理.txt
+│
+├── 02-turtle\
+│   ├── API速查.txt
+│   └── 绘图模板.py
+│
+├── 03-numpy\
+│   ├── API速查.txt
+│   ├── 数组操作.py
+│   └── 统计运算.py
+│
+├── 04-pandas\
+│   ├── API速查.txt
+│   └── CSV数据分析.py
+│
+├── 05-matplotlib\
+│   ├── API速查.txt
+│   └── 五种常见图.py
+│
+├── 06-jieba\
+│   ├── API速查.txt
+│   └── 分词统计.py
+│
+├── 07-wordcloud\
+│   ├── API速查.txt
+│   └── 中文词云.py
+│
+├── 08-opencv\
+│   ├── API速查.txt
+│   └── 图像处理.py
+│
+├── 09-综合例题\
+│   ├── 学生成绩分析.py
+│   ├── 中文词频词云.py
+│   └── 图像灰度边缘检测.py
+│
+└── 10-测试数据\
+    ├── scores.csv
+    ├── article.txt
+    └── test.jpg
+```
+
+这里有个重要原则：**每个函数不仅记录名字，还要记录用途、参数、返回值、能运行的最短代码、常见错误。**
+
+例如，`04-pandas/API速查.txt` 可以这样写：
+
+```text
+关键词：读取CSV、读取表格、文件导入、read_csv
+
+函数：pd.read_csv(filepath_or_buffer, encoding=...)
+
+作用：读取CSV文件，返回DataFrame
+
+示例：
+import pandas as pd
+df = pd.read_csv("scores.csv", encoding="utf-8")
+print(df.head())
+
+常见错误：
+1. 文件路径不存在
+2. 编码不匹配
+3. 文件分隔符不是逗号，可指定 sep
+
+---------------------------------------
+
+关键词：分组求平均、班级平均分、groupby
+
+函数：df.groupby()
+
+示例：
+result = df.groupby("班级")["成绩"].mean()
+
+作用：按班级分组，计算成绩平均值
+```
+
+这样即便忘记 `groupby` 这个英文名称，搜索「班级平均分」也能找到代码。
+
+### 第二步：建立全文索引
+
+安装 DocFetcher 后：
+
+1. 添加 `D:\PythonExam` 为索引目录。
+2. 确保 TXT、PY 等需要检索的扩展名被纳入索引。
+3. 首次建立索引，后续修改资料时更新索引。
+4. 在搜索框输入关键词，定位对应文档并查看内容。
+
+DocFetcher 的近似搜索主要对英文单词、API 名称有用；对于中文自然语言问题，最有效的做法是在笔记里加入中文同义关键词。
+
+例如：
+
+| 想找什么 | 搜索内容 |
+|---|---|
+| NumPy 改变数组形状 | `reshape` |
+| 忘记了 reshape 的拼写 | `reshap~` |
+| 分组求平均 | `groupby` 或 `分组求平均` |
+| 生成词云 | `WordCloud` 或 `生成词云` |
+| 图像变灰 | `cvtColor` 或 `灰度化` |
+
+### 第三步：建立可直接运行的 Python 环境
+
+在 PowerShell 中执行：
+
+```powershell
+mkdir D:\PythonExam
+cd D:\PythonExam
+
+py -m venv .venv
+
+.\.venv\Scripts\python.exe -m pip install numpy pandas matplotlib jieba wordcloud opencv-python openpyxl pillow
+```
+
+然后使用虚拟环境中的 Python 运行所有例题。`openpyxl` 用于 Pandas 处理 Excel，`pillow` 用于图像相关操作。
+
+还可以利用 Python 自带的离线帮助系统：
+
+```python
+import numpy as np
+import pandas as pd
+import cv2
+
+help(np.reshape)
+help(pd.read_csv)
+help(cv2.resize)
+```
+
+或者在该虚拟环境中执行：
+
+```powershell
+.\.venv\Scripts\python.exe -m pydoc -b
+```
+
+它会启动本地文档服务并打开浏览器，查看当前 Python 环境中已安装模块的帮助信息。<Cite refs={["turn197646search7"]}/>
+
+## 四、考试前应该怎样复习？
+
+我会按下面的顺序安排，而不是每个库平均花时间。
+
+<box border radius="lg" padding={3} gap={3}>
+  <row align="center" justify="between">
+    **考试准备清单**
+    <text color="secondary" size="xs">可勾选进度</text>
+  </row>
+  {@body const tasks=[
+    ["熟悉 Python 基础","循环、函数、文件读写、字符串、字典"],
+    ["掌握 NumPy","数组、索引、axis、运算、reshape"],
+    ["掌握 Pandas","CSV、数据筛选、排序、groupby"],
+    ["掌握 Matplotlib","五类常见图形与绘图参数"],
+    ["完成 jieba + wordcloud 综合题","分词、统计、生成中文词云"],
+    ["完成 OpenCV 图像处理题","读取、灰度、缩放、阈值、边缘"],
+    ["完成 turtle 绘图题","循环绘图、坐标、颜色、填充"],
+    ["测试离线知识库","模拟无网络环境下查函数并独立编程"]
+  ]}
+  {@body const [done,setDone]=DIL.useState([])}
+  <row align="center" gap={2}>
+    <box flex="1" background="surface-tertiary" height="7px" radius="full" clip>
+      <box background="rgba(33,150,104,0.85)" width={`${done.length/tasks.length*100}%`} height="100%" radius="full"/>
+    </box>
+    <text size="xs" color="secondary" tabularNums>{done.length}/{tasks.length}</text>
+  </row>
+  {#each tasks as t,i}
+    <checkbox key={i} checked={done.includes(i)} onChange={v=>setDone(old=>v?[...old,i]:old.filter(x=>x!==i))} lineThrough={false}>
+      <box gap="2px">
+        <text weight="medium">{t[0]}</text>
+        <text color="secondary" size="xs">{t[1]}</text>
+      </box>
+    </checkbox>
+  {/each}
+</box>
+
+最后需要确认一个关键条件：**这门考试是允许查询本地资料的上机考试，还是闭卷机考？**
+
+如果允许离线资料，重点就应该放在「题型识别 + 代码模板 + 高速搜索」上；如果是闭卷机考，则应该优先把 NumPy、Pandas、Matplotlib 等高频 API 练熟，并用知识库辅助考前训练，而不是依赖考试时检索。
+
+---
+
+## assistant
+
+## 三、如何建立本地 Python 考试知识库？
+
+我比较推荐下面这套组合。
+
+<box gap={3}>
+  <row align="start" gap={3}>
+    <AsyncImage query="DocFetcher desktop search application Windows screenshot search results document preview" aspectRatio="5:4" maxWidth="124px"/>
+    <box flex="1" gap={1}>
+      <row align="center" wrap="wrap" gap={2}>
+        **<Entity category="software" value="DocFetcher"/>**
+        <badge color="success">最推荐</badge>
+      </row>
+      离线全文索引，适合大量 TXT、文档和代码笔记。支持通配符、布尔查询和真正的近似词匹配，例如 `roam~`。<Cite refs={["turn504002search5","turn197646search8"]}/>
+      <text size="sm"><Link url="https://docfetcher.sourceforge.io/download/" title="官方下载"/></text>
+    </box>
+  </row>
+  <divider color="subtle"/>
+  <row align="start" gap={3}>
+    <AsyncImage query="Zeal offline documentation browser app screenshot Python documentation search" aspectRatio="5:4" maxWidth="124px"/>
+    <box flex="1" gap={1}>
+      **<Entity category="software" value="Zeal"/>**
+
+      专门查函数和官方 API 文档。安装后，在 `File → Docset Library` 选择所需文档下载，之后即可离线搜索。可通过 `python:关键词` 限定文档范围。<Cite refs={["turn800419search6"]}/>
+      <text size="sm"><Link url="https://zealdocs.org/" title="官方网站"/></text>
+    </box>
+  </row>
+  <divider color="subtle"/>
+  <row align="start" gap={3}>
+    <AsyncImage query="Visual Studio Code editor global search sidebar code search results screenshot" aspectRatio="5:4" maxWidth="124px"/>
+    <box flex="1" gap={1}>
+      **<Entity category="software" value="Visual Studio Code"/>**
+
+      编写、管理和检索自己的 `.txt`、`.py` 文件。`Ctrl+Shift+F` 可以搜索整个文件夹，直接定位匹配的代码行。
+    </box>
+  </row>
+</box>
+
+其中 **DocFetcher 负责模糊搜索，VSCode 负责编辑和查看代码，Zeal 负责补充官方文档**。三者可以独立运行，不需要数据库服务器。
+
+### 第一步：准备知识库目录
+
+建议建立如下目录：
+
+```text
+D:\PythonExam\
+│
+├── 00-总索引.txt
+├── 01-Python基础\
+│   ├── 字符串.txt
+│   ├── 列表字典集合.txt
+│   ├── 文件读写.txt
+│   └── 异常处理.txt
+│
+├── 02-turtle\
+│   ├── API速查.txt
+│   └── 绘图模板.py
+│
+├── 03-numpy\
+│   ├── API速查.txt
+│   ├── 数组操作.py
+│   └── 统计运算.py
+│
+├── 04-pandas\
+│   ├── API速查.txt
+│   └── CSV数据分析.py
+│
+├── 05-matplotlib\
+│   ├── API速查.txt
+│   └── 五种常见图.py
+│
+├── 06-jieba\
+│   ├── API速查.txt
+│   └── 分词统计.py
+│
+├── 07-wordcloud\
+│   ├── API速查.txt
+│   └── 中文词云.py
+│
+├── 08-opencv\
+│   ├── API速查.txt
+│   └── 图像处理.py
+│
+├── 09-综合例题\
+│   ├── 学生成绩分析.py
+│   ├── 中文词频词云.py
+│   └── 图像灰度边缘检测.py
+│
+└── 10-测试数据\
+    ├── scores.csv
+    ├── article.txt
+    └── test.jpg
+```
+
+这里有个重要原则：**每个函数不仅记录名字，还要记录用途、参数、返回值、能运行的最短代码、常见错误。**
+
+例如，`04-pandas/API速查.txt` 可以这样写：
+
+```text
+关键词：读取CSV、读取表格、文件导入、read_csv
+
+函数：pd.read_csv(filepath_or_buffer, encoding=...)
+
+作用：读取CSV文件，返回DataFrame
+
+示例：
+import pandas as pd
+df = pd.read_csv("scores.csv", encoding="utf-8")
+print(df.head())
+
+常见错误：
+1. 文件路径不存在
+2. 编码不匹配
+3. 文件分隔符不是逗号，可指定 sep
+
+---------------------------------------
+
+关键词：分组求平均、班级平均分、groupby
+
+函数：df.groupby()
+
+示例：
+result = df.groupby("班级")["成绩"].mean()
+
+作用：按班级分组，计算成绩平均值
+```
+
+这样即便忘记 `groupby` 这个英文名称，搜索「班级平均分」也能找到代码。
+
+### 第二步：建立全文索引
+
+安装 DocFetcher 后：
+
+1. 添加 `D:\PythonExam` 为索引目录。
+2. 确保 TXT、PY 等需要检索的扩展名被纳入索引。
+3. 首次建立索引，后续修改资料时更新索引。
+4. 在搜索框输入关键词，定位对应文档并查看内容。
+
+DocFetcher 的近似搜索主要对英文单词、API 名称有用；对于中文自然语言问题，最有效的做法是在笔记里加入中文同义关键词。
+
+例如：
+
+| 想找什么 | 搜索内容 |
+|---|---|
+| NumPy 改变数组形状 | `reshape` |
+| 忘记了 reshape 的拼写 | `reshap~` |
+| 分组求平均 | `groupby` 或 `分组求平均` |
+| 生成词云 | `WordCloud` 或 `生成词云` |
+| 图像变灰 | `cvtColor` 或 `灰度化` |
+
+### 第三步：建立可直接运行的 Python 环境
+
+在 PowerShell 中执行：
+
+```powershell
+mkdir D:\PythonExam
+cd D:\PythonExam
+
+py -m venv .venv
+
+.\.venv\Scripts\python.exe -m pip install numpy pandas matplotlib jieba wordcloud opencv-python openpyxl pillow
+```
+
+然后使用虚拟环境中的 Python 运行所有例题。`openpyxl` 用于 Pandas 处理 Excel，`pillow` 用于图像相关操作。
+
+还可以利用 Python 自带的离线帮助系统：
+
+```python
+import numpy as np
+import pandas as pd
+import cv2
+
+help(np.reshape)
+help(pd.read_csv)
+help(cv2.resize)
+```
+
+或者在该虚拟环境中执行：
+
+```powershell
+.\.venv\Scripts\python.exe -m pydoc -b
+```
+
+它会启动本地文档服务并打开浏览器，查看当前 Python 环境中已安装模块的帮助信息。<Cite refs={["turn197646search7"]}/>
+
+## 四、考试前应该怎样复习？
+
+我会按下面的顺序安排，而不是每个库平均花时间。
+
+<box border radius="lg" padding={3} gap={3}>
+  <row align="center" justify="between">
+    **考试准备清单**
+    <text color="secondary" size="xs">可勾选进度</text>
+  </row>
+  {@body const tasks=[
+    ["熟悉 Python 基础","循环、函数、文件读写、字符串、字典"],
+    ["掌握 NumPy","数组、索引、axis、运算、reshape"],
+    ["掌握 Pandas","CSV、数据筛选、排序、groupby"],
+    ["掌握 Matplotlib","五类常见图形与绘图参数"],
+    ["完成 jieba + wordcloud 综合题","分词、统计、生成中文词云"],
+    ["完成 OpenCV 图像处理题","读取、灰度、缩放、阈值、边缘"],
+    ["完成 turtle 绘图题","循环绘图、坐标、颜色、填充"],
+    ["测试离线知识库","模拟无网络环境下查函数并独立编程"]
+  ]}
+  {@body const [done,setDone]=DIL.useState([])}
+  <row align="center" gap={2}>
+    <box flex="1" background="surface-tertiary" height="7px" radius="full" clip>
+      <box background="rgba(33,150,104,0.85)" width={`${done.length/tasks.length*100}%`} height="100%" radius="full"/>
+    </box>
+    <text size="xs" color="secondary" tabularNums>{done.length}/{tasks.length}</text>
+  </row>
+  {#each tasks as t,i}
+    <checkbox key={i} checked={done.includes(i)} onChange={v=>setDone(old=>v?[...old,i]:old.filter(x=>x!==i))} lineThrough={false}>
+      <box gap="2px">
+        <text weight="medium">{t[0]}</text>
+        <text color="secondary" size="xs">{t[1]}</text>
+      </box>
+    </checkbox>
+  {/each}
+</box>
+
+最后需要确认一个关键条件：**这门考试是允许查询本地资料的上机考试，还是闭卷机考？**
+
+如果允许离线资料，重点就应该放在「题型识别 + 代码模板 + 高速搜索」上；如果是闭卷机考，则应该优先把 NumPy、Pandas、Matplotlib 等高频 API 练熟，并用知识库辅助考前训练，而不是依赖考试时检索。

@@ -1,0 +1,20 @@
+# 每台电脑本地创建的 Python 环境与缓存
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# 编辑器和临时文件
+.idea/
+.vscode/
+*.tmp
+*.log
+Thumbs.db
+Desktop.ini
+
+# 原始分享页面的内部数据；学习备份和官方资料保留
+14-来源资料/share-decoded.json
+14-来源资料/share-source.html.txt

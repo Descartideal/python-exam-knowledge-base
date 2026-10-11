@@ -1,0 +1,175 @@
+<!doctype html><html lang="zh"><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;"><title>WordCloud：中文示例</title><style>body{max-width:1100px;margin:30px auto;padding:20px;font:16px/1.7 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.7 Consolas,monospace}a{color:#245ca1}</style><h1>WordCloud：中文示例</h1><p>官方页面文字快照 · 下载日期 2026-10-10 · <span>本地官方正文</span> · <a href="wordcloud-chinese.source.txt">本地原始文本与版权声明</a></p><p>这是部分页面的离线备份。导航、交互示例和图片未同步；本文文字已保存在本地；未下载的导航目标与图片不参与阅读。中文学习归纳位于知识库对应章节。</p><hr><pre>create wordcloud with chinese — wordcloud 1.8.1 documentation
+
+             wordcloud
+
+                1.8.1
+
+User Documentation
+
+API Reference
+
+Command Line Interface
+
+Gallery of Examples
+
+Single Word
+
+Create wordcloud with Arabic
+
+Minimal Example
+
+Masked wordcloud
+
+Using frequency
+
+Image-colored wordcloud
+
+Emoji Example
+
+Using custom colors
+
+Image-colored wordcloud with boundary map
+
+create wordcloud with chinese
+
+Colored by Group Example
+
+Changelog
+
+Contributor Documentation
+
+Making a release
+
+          wordcloud
+
+ »
+
+Gallery of Examples »
+
+create wordcloud with chinese
+
+             View page source
+
+Note
+
+Click here     to download the full example code
+
+create wordcloud with chinese¶
+
+Wordcloud is a very good tool, but if you want to create
+Chinese wordcloud only wordcloud is not enough. The file
+shows how to use wordcloud with Chinese. First, you need a
+Chinese word segmentation library jieba, jieba is now the
+most elegant the most popular Chinese word segmentation tool in python.
+You can use ‘PIP install jieba’. To install it. As you can see,
+at the same time using wordcloud with jieba very convenient
+
+Out:
+
+Building prefix dict from the default dictionary ...
+Dumping model to file cache /tmp/jieba.cache
+Loading model cost 1.544 seconds.
+Prefix dict has been built successfully.
+
+&lt;wordcloud.wordcloud.WordCloud object at 0x7f4b76d4efd0&gt;
+
+import jieba
+jieba.enable_parallel(4)
+# Setting up parallel processes :4 ,but unable to run on Windows
+from os import path
+from imageio import imread
+import matplotlib.pyplot as plt
+import os
+# jieba.load_userdict(&quot;txt\userdict.txt&quot;)
+# add userdict by load_userdict()
+from wordcloud import WordCloud, ImageColorGenerator
+
+# get data directory (using getcwd() is needed to support running example in generated IPython notebook)
+d = path.dirname(__file__) if &quot;__file__&quot; in locals() else os.getcwd()
+
+stopwords_path = d + &#x27;/wc_cn/stopwords_cn_en.txt&#x27;
+# Chinese fonts must be set
+font_path = d + &#x27;/fonts/SourceHanSerif/SourceHanSerifK-Light.otf&#x27;
+
+# the path to save worldcloud
+imgname1 = d + &#x27;/wc_cn/LuXun.jpg&#x27;
+imgname2 = d + &#x27;/wc_cn/LuXun_colored.jpg&#x27;
+# read the mask / color image taken from
+back_coloring = imread(path.join(d, d + &#x27;/wc_cn/LuXun_color.jpg&#x27;))
+
+# Read the whole text.
+text = open(path.join(d, d + &#x27;/wc_cn/CalltoArms.txt&#x27;)).read()
+
+# if you want use wordCloud,you need it
+# add userdict by add_word()
+userdict_list = [&#x27;阿Ｑ&#x27;, &#x27;孔乙己&#x27;, &#x27;单四嫂子&#x27;]
+
+# The function for processing text with Jieba
+def jieba_processing_txt(text):
+    for word in userdict_list:
+        jieba.add_word(word)
+
+    mywordlist = []
+    seg_list = jieba.cut(text, cut_all=False)
+    liststr = &quot;/ &quot;.join(seg_list)
+
+    with open(stopwords_path, encoding=&#x27;utf-8&#x27;) as f_stop:
+        f_stop_text = f_stop.read()
+        f_stop_seg_list = f_stop_text.splitlines()
+
+    for myword in liststr.split(&#x27;/&#x27;):
+        if not (myword.strip() in f_stop_seg_list) and len(myword.strip()) &gt; 1:
+            mywordlist.append(myword)
+    return &#x27; &#x27;.join(mywordlist)
+
+wc = WordCloud(font_path=font_path, background_color=&quot;white&quot;, max_words=2000, mask=back_coloring,
+               max_font_size=100, random_state=42, width=1000, height=860, margin=2,)
+
+wc.generate(jieba_processing_txt(text))
+
+# create coloring from image
+image_colors_default = ImageColorGenerator(back_coloring)
+
+plt.figure()
+# recolor wordcloud and show
+plt.imshow(wc, interpolation=&quot;bilinear&quot;)
+plt.axis(&quot;off&quot;)
+plt.show()
+
+# save wordcloud
+wc.to_file(path.join(d, imgname1))
+
+# create coloring from image
+image_colors_byImg = ImageColorGenerator(back_coloring)
+
+# show
+# we could also give color_func=image_colors directly in the constructor
+plt.imshow(wc.recolor(color_func=image_colors_byImg), interpolation=&quot;bilinear&quot;)
+plt.axis(&quot;off&quot;)
+plt.figure()
+plt.imshow(back_coloring, interpolation=&quot;bilinear&quot;)
+plt.axis(&quot;off&quot;)
+plt.show()
+
+# save wordcloud
+wc.to_file(path.join(d, imgname2))
+
+Total running time of the script: ( 0 minutes  14.144 seconds)
+
+Download Python source code: wordcloud_cn.py
+
+Download Jupyter notebook: wordcloud_cn.ipynb
+
+Gallery generated by Sphinx-Gallery
+
+        Next 
+
+         Previous
+
+        © Copyright 2020, Andreas Mueller
+
+    Built with Sphinx using a
+    
+    theme
+    
+    provided by Read the Docs.</pre></html>

@@ -1,0 +1,687 @@
+<!doctype html><html lang="zh"><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;"><title>Python：数字、字符串、列表</title><style>body{max-width:1100px;margin:30px auto;padding:20px;font:16px/1.7 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.7 Consolas,monospace}a{color:#245ca1}</style><h1>Python：数字、字符串、列表</h1><p>官方页面文字快照 · 下载日期 2026-10-10 · <span>本地官方正文</span> · <a href="python-start.source.txt">本地原始文本与版权声明</a></p><p>这是部分页面的离线备份。导航、交互示例和图片未同步；本文文字已保存在本地；未下载的导航目标与图片不参与阅读。中文学习归纳位于知识库对应章节。</p><hr><pre>3. An Informal Introduction to Python — Python 3.12.15 documentation
+
+    Theme
+    
+        Auto
+        Light
+        Dark
+
+Table of Contents
+
+3. An Informal Introduction to Python
+
+3.1. Using Python as a Calculator
+
+3.1.1. Numbers
+
+3.1.2. Text
+
+3.1.3. Lists
+
+3.2. First Steps Towards Programming
+
+Previous topic
+
+2. Using the Python Interpreter
+
+Next topic
+
+4. More Control Flow Tools
+
+This Page
+
+Report a Bug
+
+        Show Source
+
+Navigation
+
+          index
+
+          modules |
+
+          next |
+
+          previous |
+
+Python »
+
+      3.12.15 Documentation »
+
+The Python Tutorial »
+
+3. An Informal Introduction to Python
+
+                     |
+
+    Theme
+    
+        Auto
+        Light
+        Dark
+    
+ |
+
+3. An Informal Introduction to Python¶
+
+In the following examples, input and output are distinguished by the presence or
+absence of prompts (&gt;&gt;&gt; and …): to repeat the example, you must type
+everything after the prompt, when the prompt appears; lines that do not begin
+with a prompt are output from the interpreter. Note that a secondary prompt on a
+line by itself in an example means you must type a blank line; this is used to
+end a multi-line command.
+
+You can toggle the display of prompts and output by clicking on &gt;&gt;&gt;
+in the upper-right corner of an example box.  If you hide the prompts
+and output for an example, then you can easily copy and paste the input
+lines into your interpreter.
+
+Many of the examples in this manual, even those entered at the interactive
+prompt, include comments.  Comments in Python start with the hash character,
+#, and extend to the end of the physical line.  A comment may appear at the
+start of a line or following whitespace or code, but not within a string
+literal.  A hash character within a string literal is just a hash character.
+Since comments are to clarify code and are not interpreted by Python, they may
+be omitted when typing in examples.
+
+Some examples:
+
+# this is the first comment
+spam = 1  # and this is the second comment
+          # ... and now a third!
+text = &quot;# This is not a comment because it&#x27;s inside quotes.&quot;
+
+3.1. Using Python as a Calculator¶
+
+Let’s try some simple Python commands.  Start the interpreter and wait for the
+primary prompt, &gt;&gt;&gt;.  (It shouldn’t take long.)
+
+3.1.1. Numbers¶
+
+The interpreter acts as a simple calculator: you can type an expression at it
+and it will write the value.  Expression syntax is straightforward: the
+operators +, -, * and / can be used to perform
+arithmetic; parentheses (()) can be used for grouping.
+For example:
+
+&gt;&gt;&gt; 2 + 2
+4
+&gt;&gt;&gt; 50 - 5*6
+20
+&gt;&gt;&gt; (50 - 5*6) / 4
+5.0
+&gt;&gt;&gt; 8 / 5  # division always returns a floating-point number
+1.6
+
+The integer numbers (e.g. 2, 4, 20) have type int,
+the ones with a fractional part (e.g. 5.0, 1.6) have type
+float.  We will see more about numeric types later in the tutorial.
+
+Division (/) always returns a float.  To do floor division and
+get an integer result you can use the // operator; to calculate
+the remainder you can use %:
+
+&gt;&gt;&gt; 17 / 3  # classic division returns a float
+5.666666666666667
+&gt;&gt;&gt;
+&gt;&gt;&gt; 17 // 3  # floor division discards the fractional part
+5
+&gt;&gt;&gt; 17 % 3  # the % operator returns the remainder of the division
+2
+&gt;&gt;&gt; 5 * 3 + 2  # floored quotient * divisor + remainder
+17
+
+With Python, it is possible to use the ** operator to calculate powers [1]:
+
+&gt;&gt;&gt; 5 ** 2  # 5 squared
+25
+&gt;&gt;&gt; 2 ** 7  # 2 to the power of 7
+128
+
+The equal sign (=) is used to assign a value to a variable. Afterwards, no
+result is displayed before the next interactive prompt:
+
+&gt;&gt;&gt; width = 20
+&gt;&gt;&gt; height = 5 * 9
+&gt;&gt;&gt; width * height
+900
+
+If a variable is not “defined” (assigned a value), trying to use it will
+give you an error:
+
+&gt;&gt;&gt; n  # try to access an undefined variable
+Traceback (most recent call last):
+  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;
+NameError: name &#x27;n&#x27; is not defined
+
+There is full support for floating point; operators with mixed type operands
+convert the integer operand to floating point:
+
+&gt;&gt;&gt; 4 * 3.75 - 1
+14.0
+
+In interactive mode, the last printed expression is assigned to the variable
+_.  This means that when you are using Python as a desk calculator, it is
+somewhat easier to continue calculations, for example:
+
+&gt;&gt;&gt; tax = 12.5 / 100
+&gt;&gt;&gt; price = 100.50
+&gt;&gt;&gt; price * tax
+12.5625
+&gt;&gt;&gt; price + _
+113.0625
+&gt;&gt;&gt; round(_, 2)
+113.06
+
+This variable should be treated as read-only by the user.  Don’t explicitly
+assign a value to it — you would create an independent local variable with the
+same name masking the built-in variable with its magic behavior.
+
+In addition to int and float, Python supports other types of
+numbers, such as Decimal and Fraction.
+Python also has built-in support for complex numbers,
+and uses the j or J suffix to indicate the imaginary part
+(e.g. 3+5j).
+
+3.1.2. Text¶
+
+Python can manipulate text (represented by type str, so-called
+“strings”) as well as numbers.  This includes characters “!”, words
+“rabbit”, names “Paris”, sentences “Got your back.”, etc.
+“Yay! :)”. They can be enclosed in single quotes (&#x27;...&#x27;) or double
+quotes (&quot;...&quot;) with the same result [2].
+
+&gt;&gt;&gt; &#x27;spam eggs&#x27;  # single quotes
+&#x27;spam eggs&#x27;
+&gt;&gt;&gt; &quot;Paris rabbit got your back :)! Yay!&quot;  # double quotes
+&#x27;Paris rabbit got your back :)! Yay!&#x27;
+&gt;&gt;&gt; &#x27;1975&#x27;  # digits and numerals enclosed in quotes are also strings
+&#x27;1975&#x27;
+
+To quote a quote, we need to “escape” it, by preceding it with \.
+Alternatively, we can use the other type of quotation marks:
+
+&gt;&gt;&gt; &#x27;doesn\&#x27;t&#x27;  # use \&#x27; to escape the single quote...
+&quot;doesn&#x27;t&quot;
+&gt;&gt;&gt; &quot;doesn&#x27;t&quot;  # ...or use double quotes instead
+&quot;doesn&#x27;t&quot;
+&gt;&gt;&gt; &#x27;&quot;Yes,&quot; they said.&#x27;
+&#x27;&quot;Yes,&quot; they said.&#x27;
+&gt;&gt;&gt; &quot;\&quot;Yes,\&quot; they said.&quot;
+&#x27;&quot;Yes,&quot; they said.&#x27;
+&gt;&gt;&gt; &#x27;&quot;Isn\&#x27;t,&quot; they said.&#x27;
+&#x27;&quot;Isn\&#x27;t,&quot; they said.&#x27;
+
+In the Python shell, the string definition and output string can look
+different.  The print() function produces a more readable output, by
+omitting the enclosing quotes and by printing escaped and special characters:
+
+&gt;&gt;&gt; s = &#x27;First line.\nSecond line.&#x27;  # \n means newline
+&gt;&gt;&gt; s  # without print(), special characters are included in the string
+&#x27;First line.\nSecond line.&#x27;
+&gt;&gt;&gt; print(s)  # with print(), special characters are interpreted, so \n produces new line
+First line.
+Second line.
+
+If you don’t want characters prefaced by \ to be interpreted as
+special characters, you can use raw strings by adding an r before
+the first quote:
+
+&gt;&gt;&gt; print(&#x27;C:\some\name&#x27;)  # here \n means newline!
+C:\some
+ame
+&gt;&gt;&gt; print(r&#x27;C:\some\name&#x27;)  # note the r before the quote
+C:\some\name
+
+There is one subtle aspect to raw strings: a raw string may not end in
+an odd number of \ characters; see
+the FAQ entry for more information
+and workarounds.
+
+String literals can span multiple lines.  One way is using triple-quotes:
+&quot;&quot;&quot;...&quot;&quot;&quot; or &#x27;&#x27;&#x27;...&#x27;&#x27;&#x27;.  End-of-line characters are automatically
+included in the string, but it’s possible to prevent this by adding a \ at
+the end of the line.  In the following example, the initial newline is not
+included:
+
+&gt;&gt;&gt; print(&quot;&quot;&quot;\
+... Usage: thingy [OPTIONS]
+...      -h                        Display this usage message
+...      -H hostname               Hostname to connect to
+... &quot;&quot;&quot;)
+Usage: thingy [OPTIONS]
+     -h                        Display this usage message
+     -H hostname               Hostname to connect to
+
+&gt;&gt;&gt;
+
+Strings can be concatenated (glued together) with the + operator, and
+repeated with *:
+
+&gt;&gt;&gt; # 3 times &#x27;un&#x27;, followed by &#x27;ium&#x27;
+&gt;&gt;&gt; 3 * &#x27;un&#x27; + &#x27;ium&#x27;
+&#x27;unununium&#x27;
+
+Two or more string literals (i.e. the ones enclosed between quotes) next
+to each other are automatically concatenated.
+
+&gt;&gt;&gt; &#x27;Py&#x27; &#x27;thon&#x27;
+&#x27;Python&#x27;
+
+This feature is particularly useful when you want to break long strings:
+
+&gt;&gt;&gt; text = (&#x27;Put several strings within parentheses &#x27;
+...         &#x27;to have them joined together.&#x27;)
+&gt;&gt;&gt; text
+&#x27;Put several strings within parentheses to have them joined together.&#x27;
+
+This only works with two literals though, not with variables or expressions:
+
+&gt;&gt;&gt; prefix = &#x27;Py&#x27;
+&gt;&gt;&gt; prefix &#x27;thon&#x27;  # can&#x27;t concatenate a variable and a string literal
+  File &quot;&lt;stdin&gt;&quot;, line 1
+    prefix &#x27;thon&#x27;
+           ^^^^^^
+SyntaxError: invalid syntax
+&gt;&gt;&gt; (&#x27;un&#x27; * 3) &#x27;ium&#x27;
+  File &quot;&lt;stdin&gt;&quot;, line 1
+    (&#x27;un&#x27; * 3) &#x27;ium&#x27;
+               ^^^^^
+SyntaxError: invalid syntax
+
+If you want to concatenate variables or a variable and a literal, use +:
+
+&gt;&gt;&gt; prefix + &#x27;thon&#x27;
+&#x27;Python&#x27;
+
+Strings can be indexed (subscripted), with the first character having index 0.
+There is no separate character type; a character is simply a string of size
+one:
+
+&gt;&gt;&gt; word = &#x27;Python&#x27;
+&gt;&gt;&gt; word[0]  # character in position 0
+&#x27;P&#x27;
+&gt;&gt;&gt; word[5]  # character in position 5
+&#x27;n&#x27;
+
+Indices may also be negative numbers, to start counting from the right:
+
+&gt;&gt;&gt; word[-1]  # last character
+&#x27;n&#x27;
+&gt;&gt;&gt; word[-2]  # second-last character
+&#x27;o&#x27;
+&gt;&gt;&gt; word[-6]
+&#x27;P&#x27;
+
+Note that since -0 is the same as 0, negative indices start from -1.
+
+In addition to indexing, slicing is also supported.  While indexing is used
+to obtain individual characters, slicing allows you to obtain a substring:
+
+&gt;&gt;&gt; word[0:2]  # characters from position 0 (included) to 2 (excluded)
+&#x27;Py&#x27;
+&gt;&gt;&gt; word[2:5]  # characters from position 2 (included) to 5 (excluded)
+&#x27;tho&#x27;
+
+Slice indices have useful defaults; an omitted first index defaults to zero, an
+omitted second index defaults to the size of the string being sliced.
+
+&gt;&gt;&gt; word[:2]   # character from the beginning to position 2 (excluded)
+&#x27;Py&#x27;
+&gt;&gt;&gt; word[4:]   # characters from position 4 (included) to the end
+&#x27;on&#x27;
+&gt;&gt;&gt; word[-2:]  # characters from the second-last (included) to the end
+&#x27;on&#x27;
+
+Note how the start is always included, and the end always excluded.  This
+makes sure that s[:i] + s[i:] is always equal to s:
+
+&gt;&gt;&gt; word[:2] + word[2:]
+&#x27;Python&#x27;
+&gt;&gt;&gt; word[:4] + word[4:]
+&#x27;Python&#x27;
+
+One way to remember how slices work is to think of the indices as pointing
+between characters, with the left edge of the first character numbered 0.
+Then the right edge of the last character of a string of n characters has
+index n, for example:
+
+ +---+---+---+---+---+---+
+ | P | y | t | h | o | n |
+ +---+---+---+---+---+---+
+ 0   1   2   3   4   5   6
+-6  -5  -4  -3  -2  -1
+
+The first row of numbers gives the position of the indices 0…6 in the string;
+the second row gives the corresponding negative indices. The slice from i to
+j consists of all characters between the edges labeled i and j,
+respectively.
+
+For non-negative indices, the length of a slice is the difference of the
+indices, if both are within bounds.  For example, the length of word[1:3] is
+2.
+
+Attempting to use an index that is too large will result in an error:
+
+&gt;&gt;&gt; word[42]  # the word only has 6 characters
+Traceback (most recent call last):
+  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;
+IndexError: string index out of range
+
+However, out of range slice indexes are handled gracefully when used for
+slicing:
+
+&gt;&gt;&gt; word[4:42]
+&#x27;on&#x27;
+&gt;&gt;&gt; word[42:]
+&#x27;&#x27;
+
+Python strings cannot be changed — they are immutable.
+Therefore, assigning to an indexed position in the string results in an error:
+
+&gt;&gt;&gt; word[0] = &#x27;J&#x27;
+Traceback (most recent call last):
+  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;
+TypeError: &#x27;str&#x27; object does not support item assignment
+&gt;&gt;&gt; word[2:] = &#x27;py&#x27;
+Traceback (most recent call last):
+  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;
+TypeError: &#x27;str&#x27; object does not support item assignment
+
+If you need a different string, you should create a new one:
+
+&gt;&gt;&gt; &#x27;J&#x27; + word[1:]
+&#x27;Jython&#x27;
+&gt;&gt;&gt; word[:2] + &#x27;py&#x27;
+&#x27;Pypy&#x27;
+
+The built-in function len() returns the length of a string:
+
+&gt;&gt;&gt; s = &#x27;supercalifragilisticexpialidocious&#x27;
+&gt;&gt;&gt; len(s)
+34
+
+See also
+
+Text Sequence Type — str
+Strings are examples of sequence types, and support the common
+operations supported by such types.
+
+String Methods
+Strings support a large number of methods for
+basic transformations and searching.
+
+f-strings
+String literals that have embedded expressions.
+
+Format String Syntax
+Information about string formatting with str.format().
+
+printf-style String Formatting
+The old formatting operations invoked when strings are
+the left operand of the % operator are described in more detail here.
+
+3.1.3. Lists¶
+
+Python knows a number of compound data types, used to group together other
+values.  The most versatile is the list, which can be written as a list of
+comma-separated values (items) between square brackets.  Lists might contain
+items of different types, but usually the items all have the same type.
+
+&gt;&gt;&gt; squares = [1, 4, 9, 16, 25]
+&gt;&gt;&gt; squares
+[1, 4, 9, 16, 25]
+
+Like strings (and all other built-in sequence types), lists can be
+indexed and sliced:
+
+&gt;&gt;&gt; squares[0]  # indexing returns the item
+1
+&gt;&gt;&gt; squares[-1]
+25
+&gt;&gt;&gt; squares[-3:]  # slicing returns a new list
+[9, 16, 25]
+
+Lists also support operations like concatenation:
+
+&gt;&gt;&gt; squares + [36, 49, 64, 81, 100]
+[1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+
+Unlike strings, which are immutable, lists are a mutable
+type, i.e. it is possible to change their content:
+
+&gt;&gt;&gt; cubes = [1, 8, 27, 65, 125]  # something&#x27;s wrong here
+&gt;&gt;&gt; 4 ** 3  # the cube of 4 is 64, not 65!
+64
+&gt;&gt;&gt; cubes[3] = 64  # replace the wrong value
+&gt;&gt;&gt; cubes
+[1, 8, 27, 64, 125]
+
+You can also add new items at the end of the list, by using
+the list.append() method (we will see more about methods later):
+
+&gt;&gt;&gt; cubes.append(216)  # add the cube of 6
+&gt;&gt;&gt; cubes.append(7 ** 3)  # and the cube of 7
+&gt;&gt;&gt; cubes
+[1, 8, 27, 64, 125, 216, 343]
+
+Simple assignment in Python never copies data. When you assign a list
+to a variable, the variable refers to the existing list.
+Any changes you make to the list through one variable will be seen
+through all other variables that refer to it.:
+
+&gt;&gt;&gt; rgb = [&quot;Red&quot;, &quot;Green&quot;, &quot;Blue&quot;]
+&gt;&gt;&gt; rgba = rgb
+&gt;&gt;&gt; id(rgb) == id(rgba)  # they reference the same object
+True
+&gt;&gt;&gt; rgba.append(&quot;Alph&quot;)
+&gt;&gt;&gt; rgb
+[&quot;Red&quot;, &quot;Green&quot;, &quot;Blue&quot;, &quot;Alph&quot;]
+
+All slice operations return a new list containing the requested elements.  This
+means that the following slice returns a
+shallow copy of the list:
+
+&gt;&gt;&gt; correct_rgba = rgba[:]
+&gt;&gt;&gt; correct_rgba[-1] = &quot;Alpha&quot;
+&gt;&gt;&gt; correct_rgba
+[&quot;Red&quot;, &quot;Green&quot;, &quot;Blue&quot;, &quot;Alpha&quot;]
+&gt;&gt;&gt; rgba
+[&quot;Red&quot;, &quot;Green&quot;, &quot;Blue&quot;, &quot;Alph&quot;]
+
+Assignment to slices is also possible, and this can even change the size of the
+list or clear it entirely:
+
+&gt;&gt;&gt; letters = [&#x27;a&#x27;, &#x27;b&#x27;, &#x27;c&#x27;, &#x27;d&#x27;, &#x27;e&#x27;, &#x27;f&#x27;, &#x27;g&#x27;]
+&gt;&gt;&gt; letters
+[&#x27;a&#x27;, &#x27;b&#x27;, &#x27;c&#x27;, &#x27;d&#x27;, &#x27;e&#x27;, &#x27;f&#x27;, &#x27;g&#x27;]
+&gt;&gt;&gt; # replace some values
+&gt;&gt;&gt; letters[2:5] = [&#x27;C&#x27;, &#x27;D&#x27;, &#x27;E&#x27;]
+&gt;&gt;&gt; letters
+[&#x27;a&#x27;, &#x27;b&#x27;, &#x27;C&#x27;, &#x27;D&#x27;, &#x27;E&#x27;, &#x27;f&#x27;, &#x27;g&#x27;]
+&gt;&gt;&gt; # now remove them
+&gt;&gt;&gt; letters[2:5] = []
+&gt;&gt;&gt; letters
+[&#x27;a&#x27;, &#x27;b&#x27;, &#x27;f&#x27;, &#x27;g&#x27;]
+&gt;&gt;&gt; # clear the list by replacing all the elements with an empty list
+&gt;&gt;&gt; letters[:] = []
+&gt;&gt;&gt; letters
+[]
+
+The built-in function len() also applies to lists:
+
+&gt;&gt;&gt; letters = [&#x27;a&#x27;, &#x27;b&#x27;, &#x27;c&#x27;, &#x27;d&#x27;]
+&gt;&gt;&gt; len(letters)
+4
+
+It is possible to nest lists (create lists containing other lists), for
+example:
+
+&gt;&gt;&gt; a = [&#x27;a&#x27;, &#x27;b&#x27;, &#x27;c&#x27;]
+&gt;&gt;&gt; n = [1, 2, 3]
+&gt;&gt;&gt; x = [a, n]
+&gt;&gt;&gt; x
+[[&#x27;a&#x27;, &#x27;b&#x27;, &#x27;c&#x27;], [1, 2, 3]]
+&gt;&gt;&gt; x[0]
+[&#x27;a&#x27;, &#x27;b&#x27;, &#x27;c&#x27;]
+&gt;&gt;&gt; x[0][1]
+&#x27;b&#x27;
+
+3.2. First Steps Towards Programming¶
+
+Of course, we can use Python for more complicated tasks than adding two and two
+together.  For instance, we can write an initial sub-sequence of the
+Fibonacci series
+as follows:
+
+&gt;&gt;&gt; # Fibonacci series:
+&gt;&gt;&gt; # the sum of two elements defines the next
+&gt;&gt;&gt; a, b = 0, 1
+&gt;&gt;&gt; while a &lt; 10:
+...     print(a)
+...     a, b = b, a+b
+...
+0
+1
+1
+2
+3
+5
+8
+
+This example introduces several new features.
+
+The first line contains a multiple assignment: the variables a and b
+simultaneously get the new values 0 and 1.  On the last line this is used again,
+demonstrating that the expressions on the right-hand side are all evaluated
+first before any of the assignments take place.  The right-hand side expressions
+are evaluated  from the left to the right.
+
+The while loop executes as long as the condition (here: a &lt; 10)
+remains true.  In Python, like in C, any non-zero integer value is true; zero is
+false.  The condition may also be a string or list value, in fact any sequence;
+anything with a non-zero length is true, empty sequences are false.  The test
+used in the example is a simple comparison.  The standard comparison operators
+are written the same as in C: &lt; (less than), &gt; (greater than), ==
+(equal to), &lt;= (less than or equal to), &gt;= (greater than or equal to)
+and != (not equal to).
+
+The body of the loop is indented: indentation is Python’s way of grouping
+statements.  At the interactive prompt, you have to type a tab or space(s) for
+each indented line.  In practice you will prepare more complicated input
+for Python with a text editor; all decent text editors have an auto-indent
+facility.  When a compound statement is entered interactively, it must be
+followed by a blank line to indicate completion (since the parser cannot
+guess when you have typed the last line).  Note that each line within a basic
+block must be indented by the same amount.
+
+The print() function writes the value of the argument(s) it is given.
+It differs from just writing the expression you want to write (as we did
+earlier in the calculator examples) in the way it handles multiple arguments,
+floating-point quantities, and strings.  Strings are printed without quotes,
+and a space is inserted between items, so you can format things nicely, like
+this:
+
+&gt;&gt;&gt; i = 256*256
+&gt;&gt;&gt; print(&#x27;The value of i is&#x27;, i)
+The value of i is 65536
+
+The keyword argument end can be used to avoid the newline after the output,
+or end the output with a different string:
+
+&gt;&gt;&gt; a, b = 0, 1
+&gt;&gt;&gt; while a &lt; 1000:
+...     print(a, end=&#x27;,&#x27;)
+...     a, b = b, a+b
+...
+0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,
+
+Footnotes
+
+[1]
+
+Since ** has higher precedence than -, -3**2 will be
+interpreted as -(3**2) and thus result in -9.  To avoid this
+and get 9, you can use (-3)**2.
+
+[2]
+
+Unlike other languages, special characters such as \n have the
+same meaning with both single (&#x27;...&#x27;) and double (&quot;...&quot;) quotes.
+The only difference between the two is that within single quotes you don’t
+need to escape &quot; (but you have to escape \&#x27;) and vice versa.
+
+Table of Contents
+
+3. An Informal Introduction to Python
+
+3.1. Using Python as a Calculator
+
+3.1.1. Numbers
+
+3.1.2. Text
+
+3.1.3. Lists
+
+3.2. First Steps Towards Programming
+
+Previous topic
+
+2. Using the Python Interpreter
+
+Next topic
+
+4. More Control Flow Tools
+
+This Page
+
+Report a Bug
+
+        Show Source
+
+«
+
+Navigation
+
+          index
+
+          modules |
+
+          next |
+
+          previous |
+
+Python »
+
+      3.12.15 Documentation »
+
+The Python Tutorial »
+
+3. An Informal Introduction to Python
+
+                     |
+
+    Theme
+    
+        Auto
+        Light
+        Dark
+    
+ |
+
+    © Copyright 2001-2026, Python Software Foundation.
+
+    This page is licensed under the Python Software Foundation License Version 2.
+
+    Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License.
+
+      See History and License for more information.
+
+    The Python Software Foundation is a non-profit corporation.
+Please donate.
+
+      Last updated on Oct 01, 2026 (15:25 UTC).
+    
+      Found a bug?
+
+    Created using Sphinx 8.2.3.</pre></html>

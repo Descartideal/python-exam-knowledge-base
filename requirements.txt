@@ -1,0 +1,8 @@
+numpy
+pandas
+matplotlib
+jieba
+wordcloud
+opencv-python
+openpyxl
+pillow

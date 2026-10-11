@@ -1,0 +1,707 @@
+<!doctype html><html lang="zh"><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;"><title>Python：模块与包</title><style>body{max-width:1100px;margin:30px auto;padding:20px;font:16px/1.7 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.7 Consolas,monospace}a{color:#245ca1}</style><h1>Python：模块与包</h1><p>官方页面文字快照 · 下载日期 2026-10-10 · <span>本地官方正文</span> · <a href="python-modules.source.txt">本地原始文本与版权声明</a></p><p>这是部分页面的离线备份。导航、交互示例和图片未同步；本文文字已保存在本地；未下载的导航目标与图片不参与阅读。中文学习归纳位于知识库对应章节。</p><hr><pre>6. Modules — Python 3.12.15 documentation
+
+    Theme
+    
+        Auto
+        Light
+        Dark
+
+Table of Contents
+
+6. Modules
+
+6.1. More on Modules
+
+6.1.1. Executing modules as scripts
+
+6.1.2. The Module Search Path
+
+6.1.3. “Compiled” Python files
+
+6.2. Standard Modules
+
+6.3. The dir() Function
+
+6.4. Packages
+
+6.4.1. Importing * From a Package
+
+6.4.2. Intra-package References
+
+6.4.3. Packages in Multiple Directories
+
+Previous topic
+
+5. Data Structures
+
+Next topic
+
+7. Input and Output
+
+This Page
+
+Report a Bug
+
+        Show Source
+
+Navigation
+
+          index
+
+          modules |
+
+          next |
+
+          previous |
+
+Python »
+
+      3.12.15 Documentation »
+
+The Python Tutorial »
+
+6. Modules
+
+                     |
+
+    Theme
+    
+        Auto
+        Light
+        Dark
+    
+ |
+
+6. Modules¶
+
+If you quit from the Python interpreter and enter it again, the definitions you
+have made (functions and variables) are lost. Therefore, if you want to write a
+somewhat longer program, you are better off using a text editor to prepare the
+input for the interpreter and running it with that file as input instead.  This
+is known as creating a script.  As your program gets longer, you may want to
+split it into several files for easier maintenance.  You may also want to use a
+handy function that you’ve written in several programs without copying its
+definition into each program.
+
+To support this, Python has a way to put definitions in a file and use them in a
+script or in an interactive instance of the interpreter. Such a file is called a
+module; definitions from a module can be imported into other modules or into
+the main module (the collection of variables that you have access to in a
+script executed at the top level and in calculator mode).
+
+A module is a file containing Python definitions and statements.  The file name
+is the module name with the suffix .py appended.  Within a module, the
+module’s name (as a string) is available as the value of the global variable
+__name__.  For instance, use your favorite text editor to create a file
+called fibo.py in the current directory with the following contents:
+
+# Fibonacci numbers module
+
+def fib(n):    # write Fibonacci series up to n
+    a, b = 0, 1
+    while a &lt; n:
+        print(a, end=&#x27; &#x27;)
+        a, b = b, a+b
+    print()
+
+def fib2(n):   # return Fibonacci series up to n
+    result = []
+    a, b = 0, 1
+    while a &lt; n:
+        result.append(a)
+        a, b = b, a+b
+    return result
+
+Now enter the Python interpreter and import this module with the following
+command:
+
+&gt;&gt;&gt; import fibo
+
+This does not add the names of the functions defined in fibo  directly to
+the current namespace (see Python Scopes and Namespaces for more details);
+it only adds the module name fibo there. Using
+the module name you can access the functions:
+
+&gt;&gt;&gt; fibo.fib(1000)
+0 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987
+&gt;&gt;&gt; fibo.fib2(100)
+[0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
+&gt;&gt;&gt; fibo.__name__
+&#x27;fibo&#x27;
+
+If you intend to use a function often you can assign it to a local name:
+
+&gt;&gt;&gt; fib = fibo.fib
+&gt;&gt;&gt; fib(500)
+0 1 1 2 3 5 8 13 21 34 55 89 144 233 377
+
+6.1. More on Modules¶
+
+A module can contain executable statements as well as function definitions.
+These statements are intended to initialize the module. They are executed only
+the first time the module name is encountered in an import statement. [1]
+(They are also run if the file is executed as a script.)
+
+Each module has its own private namespace, which is used as the global namespace
+by all functions defined in the module. Thus, the author of a module can
+use global variables in the module without worrying about accidental clashes
+with a user’s global variables. On the other hand, if you know what you are
+doing you can touch a module’s global variables with the same notation used to
+refer to its functions, modname.itemname.
+
+Modules can import other modules.  It is customary but not required to place all
+import statements at the beginning of a module (or script, for that
+matter).  The imported module names, if placed at the top level of a module
+(outside any functions or classes), are added to the module’s global namespace.
+
+There is a variant of the import statement that imports names from a
+module directly into the importing module’s namespace.  For example:
+
+&gt;&gt;&gt; from fibo import fib, fib2
+&gt;&gt;&gt; fib(500)
+0 1 1 2 3 5 8 13 21 34 55 89 144 233 377
+
+This does not introduce the module name from which the imports are taken in the
+local namespace (so in the example, fibo is not defined).
+
+There is even a variant to import all names that a module defines:
+
+&gt;&gt;&gt; from fibo import *
+&gt;&gt;&gt; fib(500)
+0 1 1 2 3 5 8 13 21 34 55 89 144 233 377
+
+This imports all names except those beginning with an underscore (_).
+In most cases Python programmers do not use this facility since it introduces
+an unknown set of names into the interpreter, possibly hiding some things
+you have already defined.
+
+Note that in general the practice of importing * from a module or package is
+frowned upon, since it often causes poorly readable code. However, it is okay to
+use it to save typing in interactive sessions.
+
+If the module name is followed by as, then the name
+following as is bound directly to the imported module.
+
+&gt;&gt;&gt; import fibo as fib
+&gt;&gt;&gt; fib.fib(500)
+0 1 1 2 3 5 8 13 21 34 55 89 144 233 377
+
+This is effectively importing the module in the same way that import fibo
+will do, with the only difference of it being available as fib.
+
+It can also be used when utilising from with similar effects:
+
+&gt;&gt;&gt; from fibo import fib as fibonacci
+&gt;&gt;&gt; fibonacci(500)
+0 1 1 2 3 5 8 13 21 34 55 89 144 233 377
+
+Note
+
+For efficiency reasons, each module is only imported once per interpreter
+session.  Therefore, if you change your modules, you must restart the
+interpreter – or, if it’s just one module you want to test interactively,
+use importlib.reload(), e.g. import importlib;
+importlib.reload(modulename).
+
+6.1.1. Executing modules as scripts¶
+
+When you run a Python module with
+
+python fibo.py &lt;arguments&gt;
+
+the code in the module will be executed, just as if you imported it, but with
+the __name__ set to &quot;__main__&quot;.  That means that by adding this code at
+the end of your module:
+
+if __name__ == &quot;__main__&quot;:
+    import sys
+    fib(int(sys.argv[1]))
+
+you can make the file usable as a script as well as an importable module,
+because the code that parses the command line only runs if the module is
+executed as the “main” file:
+
+$ python fibo.py 50
+0 1 1 2 3 5 8 13 21 34
+
+If the module is imported, the code is not run:
+
+&gt;&gt;&gt; import fibo
+&gt;&gt;&gt;
+
+This is often used either to provide a convenient user interface to a module, or
+for testing purposes (running the module as a script executes a test suite).
+
+6.1.2. The Module Search Path¶
+
+When a module named spam is imported, the interpreter first searches for
+a built-in module with that name. These module names are listed in
+sys.builtin_module_names. If not found, it then searches for a file
+named spam.py in a list of directories given by the variable
+sys.path.  sys.path is initialized from these locations:
+
+The directory containing the input script (or the current directory when no
+file is specified).
+
+PYTHONPATH (a list of directory names, with the same syntax as the
+shell variable PATH).
+
+The installation-dependent default (by convention including a
+site-packages directory, handled by the site module).
+
+More details are at The initialization of the sys.path module search path.
+
+Note
+
+On file systems which support symlinks, the directory containing the input
+script is calculated after the symlink is followed. In other words the
+directory containing the symlink is not added to the module search path.
+
+After initialization, Python programs can modify sys.path.  The
+directory containing the script being run is placed at the beginning of the
+search path, ahead of the standard library path. This means that scripts in that
+directory will be loaded instead of modules of the same name in the library
+directory. This is an error unless the replacement is intended.  See section
+Standard Modules for more information.
+
+6.1.3. “Compiled” Python files¶
+
+To speed up loading modules, Python caches the compiled version of each module
+in the __pycache__ directory under the name module.version.pyc,
+where the version encodes the format of the compiled file; it generally contains
+the Python version number.  For example, in CPython release 3.3 the compiled
+version of spam.py would be cached as __pycache__/spam.cpython-33.pyc.  This
+naming convention allows compiled modules from different releases and different
+versions of Python to coexist.
+
+Python checks the modification date of the source against the compiled version
+to see if it’s out of date and needs to be recompiled.  This is a completely
+automatic process.  Also, the compiled modules are platform-independent, so the
+same library can be shared among systems with different architectures.
+
+Python does not check the cache in two circumstances.  First, it always
+recompiles and does not store the result for the module that’s loaded directly
+from the command line.  Second, it does not check the cache if there is no
+source module.  To support a non-source (compiled only) distribution, the
+compiled module must be in the source directory, and there must not be a source
+module.
+
+Some tips for experts:
+
+You can use the -O or -OO switches on the Python command
+to reduce the size of a compiled module.  The -O switch removes assert
+statements, the -OO switch removes both assert statements and __doc__
+strings.  Since some programs may rely on having these available, you should
+only use this option if you know what you’re doing.  “Optimized” modules have
+an opt- tag and are usually smaller.  Future releases may
+change the effects of optimization.
+
+A program doesn’t run any faster when it is read from a .pyc
+file than when it is read from a .py file; the only thing that’s faster
+about .pyc files is the speed with which they are loaded.
+
+The module compileall can create .pyc files for all modules in a
+directory.
+
+There is more detail on this process, including a flow chart of the
+decisions, in PEP 3147.
+
+6.2. Standard Modules¶
+
+Python comes with a library of standard modules, described in a separate
+document, the Python Library Reference (“Library Reference” hereafter).  Some
+modules are built into the interpreter; these provide access to operations that
+are not part of the core of the language but are nevertheless built in, either
+for efficiency or to provide access to operating system primitives such as
+system calls.  The set of such modules is a configuration option which also
+depends on the underlying platform.  For example, the winreg module is only
+provided on Windows systems. One particular module deserves some attention:
+sys, which is built into every Python interpreter.  The variables
+sys.ps1 and sys.ps2 define the strings used as primary and secondary
+prompts:
+
+&gt;&gt;&gt; import sys
+&gt;&gt;&gt; sys.ps1
+&#x27;&gt;&gt;&gt; &#x27;
+&gt;&gt;&gt; sys.ps2
+&#x27;... &#x27;
+&gt;&gt;&gt; sys.ps1 = &#x27;C&gt; &#x27;
+C&gt; print(&#x27;Yuck!&#x27;)
+Yuck!
+C&gt;
+
+These two variables are only defined if the interpreter is in interactive mode.
+
+The variable sys.path is a list of strings that determines the interpreter’s
+search path for modules. It is initialized to a default path taken from the
+environment variable PYTHONPATH, or from a built-in default if
+PYTHONPATH is not set.  You can modify it using standard list
+operations:
+
+&gt;&gt;&gt; import sys
+&gt;&gt;&gt; sys.path.append(&#x27;/ufs/guido/lib/python&#x27;)
+
+6.3. The dir() Function¶
+
+The built-in function dir() is used to find out which names a module
+defines.  It returns a sorted list of strings:
+
+&gt;&gt;&gt; import fibo, sys
+&gt;&gt;&gt; dir(fibo)
+[&#x27;__name__&#x27;, &#x27;fib&#x27;, &#x27;fib2&#x27;]
+&gt;&gt;&gt; dir(sys)
+[&#x27;__breakpointhook__&#x27;, &#x27;__displayhook__&#x27;, &#x27;__doc__&#x27;, &#x27;__excepthook__&#x27;,
+ &#x27;__interactivehook__&#x27;, &#x27;__loader__&#x27;, &#x27;__name__&#x27;, &#x27;__package__&#x27;, &#x27;__spec__&#x27;,
+ &#x27;__stderr__&#x27;, &#x27;__stdin__&#x27;, &#x27;__stdout__&#x27;, &#x27;__unraisablehook__&#x27;,
+ &#x27;_clear_type_cache&#x27;, &#x27;_current_frames&#x27;, &#x27;_debugmallocstats&#x27;, &#x27;_framework&#x27;,
+ &#x27;_getframe&#x27;, &#x27;_git&#x27;, &#x27;_home&#x27;, &#x27;_xoptions&#x27;, &#x27;abiflags&#x27;, &#x27;addaudithook&#x27;,
+ &#x27;api_version&#x27;, &#x27;argv&#x27;, &#x27;audit&#x27;, &#x27;base_exec_prefix&#x27;, &#x27;base_prefix&#x27;,
+ &#x27;breakpointhook&#x27;, &#x27;builtin_module_names&#x27;, &#x27;byteorder&#x27;, &#x27;call_tracing&#x27;,
+ &#x27;callstats&#x27;, &#x27;copyright&#x27;, &#x27;displayhook&#x27;, &#x27;dont_write_bytecode&#x27;, &#x27;exc_info&#x27;,
+ &#x27;excepthook&#x27;, &#x27;exec_prefix&#x27;, &#x27;executable&#x27;, &#x27;exit&#x27;, &#x27;flags&#x27;, &#x27;float_info&#x27;,
+ &#x27;float_repr_style&#x27;, &#x27;get_asyncgen_hooks&#x27;, &#x27;get_coroutine_origin_tracking_depth&#x27;,
+ &#x27;getallocatedblocks&#x27;, &#x27;getdefaultencoding&#x27;, &#x27;getdlopenflags&#x27;,
+ &#x27;getfilesystemencodeerrors&#x27;, &#x27;getfilesystemencoding&#x27;, &#x27;getprofile&#x27;,
+ &#x27;getrecursionlimit&#x27;, &#x27;getrefcount&#x27;, &#x27;getsizeof&#x27;, &#x27;getswitchinterval&#x27;,
+ &#x27;gettrace&#x27;, &#x27;hash_info&#x27;, &#x27;hexversion&#x27;, &#x27;implementation&#x27;, &#x27;int_info&#x27;,
+ &#x27;intern&#x27;, &#x27;is_finalizing&#x27;, &#x27;last_traceback&#x27;, &#x27;last_type&#x27;, &#x27;last_value&#x27;,
+ &#x27;maxsize&#x27;, &#x27;maxunicode&#x27;, &#x27;meta_path&#x27;, &#x27;modules&#x27;, &#x27;path&#x27;, &#x27;path_hooks&#x27;,
+ &#x27;path_importer_cache&#x27;, &#x27;platform&#x27;, &#x27;prefix&#x27;, &#x27;ps1&#x27;, &#x27;ps2&#x27;, &#x27;pycache_prefix&#x27;,
+ &#x27;set_asyncgen_hooks&#x27;, &#x27;set_coroutine_origin_tracking_depth&#x27;, &#x27;setdlopenflags&#x27;,
+ &#x27;setprofile&#x27;, &#x27;setrecursionlimit&#x27;, &#x27;setswitchinterval&#x27;, &#x27;settrace&#x27;, &#x27;stderr&#x27;,
+ &#x27;stdin&#x27;, &#x27;stdout&#x27;, &#x27;thread_info&#x27;, &#x27;unraisablehook&#x27;, &#x27;version&#x27;, &#x27;version_info&#x27;,
+ &#x27;warnoptions&#x27;]
+
+Without arguments, dir() lists the names you have defined currently:
+
+&gt;&gt;&gt; a = [1, 2, 3, 4, 5]
+&gt;&gt;&gt; import fibo
+&gt;&gt;&gt; fib = fibo.fib
+&gt;&gt;&gt; dir()
+[&#x27;__builtins__&#x27;, &#x27;__name__&#x27;, &#x27;a&#x27;, &#x27;fib&#x27;, &#x27;fibo&#x27;, &#x27;sys&#x27;]
+
+Note that it lists all types of names: variables, modules, functions, etc.
+
+dir() does not list the names of built-in functions and variables.  If you
+want a list of those, they are defined in the standard module
+builtins:
+
+&gt;&gt;&gt; import builtins
+&gt;&gt;&gt; dir(builtins)
+[&#x27;ArithmeticError&#x27;, &#x27;AssertionError&#x27;, &#x27;AttributeError&#x27;, &#x27;BaseException&#x27;,
+ &#x27;BlockingIOError&#x27;, &#x27;BrokenPipeError&#x27;, &#x27;BufferError&#x27;, &#x27;BytesWarning&#x27;,
+ &#x27;ChildProcessError&#x27;, &#x27;ConnectionAbortedError&#x27;, &#x27;ConnectionError&#x27;,
+ &#x27;ConnectionRefusedError&#x27;, &#x27;ConnectionResetError&#x27;, &#x27;DeprecationWarning&#x27;,
+ &#x27;EOFError&#x27;, &#x27;Ellipsis&#x27;, &#x27;EnvironmentError&#x27;, &#x27;Exception&#x27;, &#x27;False&#x27;,
+ &#x27;FileExistsError&#x27;, &#x27;FileNotFoundError&#x27;, &#x27;FloatingPointError&#x27;,
+ &#x27;FutureWarning&#x27;, &#x27;GeneratorExit&#x27;, &#x27;IOError&#x27;, &#x27;ImportError&#x27;,
+ &#x27;ImportWarning&#x27;, &#x27;IndentationError&#x27;, &#x27;IndexError&#x27;, &#x27;InterruptedError&#x27;,
+ &#x27;IsADirectoryError&#x27;, &#x27;KeyError&#x27;, &#x27;KeyboardInterrupt&#x27;, &#x27;LookupError&#x27;,
+ &#x27;MemoryError&#x27;, &#x27;NameError&#x27;, &#x27;None&#x27;, &#x27;NotADirectoryError&#x27;, &#x27;NotImplemented&#x27;,
+ &#x27;NotImplementedError&#x27;, &#x27;OSError&#x27;, &#x27;OverflowError&#x27;,
+ &#x27;PendingDeprecationWarning&#x27;, &#x27;PermissionError&#x27;, &#x27;ProcessLookupError&#x27;,
+ &#x27;ReferenceError&#x27;, &#x27;ResourceWarning&#x27;, &#x27;RuntimeError&#x27;, &#x27;RuntimeWarning&#x27;,
+ &#x27;StopIteration&#x27;, &#x27;SyntaxError&#x27;, &#x27;SyntaxWarning&#x27;, &#x27;SystemError&#x27;,
+ &#x27;SystemExit&#x27;, &#x27;TabError&#x27;, &#x27;TimeoutError&#x27;, &#x27;True&#x27;, &#x27;TypeError&#x27;,
+ &#x27;UnboundLocalError&#x27;, &#x27;UnicodeDecodeError&#x27;, &#x27;UnicodeEncodeError&#x27;,
+ &#x27;UnicodeError&#x27;, &#x27;UnicodeTranslateError&#x27;, &#x27;UnicodeWarning&#x27;, &#x27;UserWarning&#x27;,
+ &#x27;ValueError&#x27;, &#x27;Warning&#x27;, &#x27;ZeroDivisionError&#x27;, &#x27;_&#x27;, &#x27;__build_class__&#x27;,
+ &#x27;__debug__&#x27;, &#x27;__doc__&#x27;, &#x27;__import__&#x27;, &#x27;__name__&#x27;, &#x27;__package__&#x27;, &#x27;abs&#x27;,
+ &#x27;all&#x27;, &#x27;any&#x27;, &#x27;ascii&#x27;, &#x27;bin&#x27;, &#x27;bool&#x27;, &#x27;bytearray&#x27;, &#x27;bytes&#x27;, &#x27;callable&#x27;,
+ &#x27;chr&#x27;, &#x27;classmethod&#x27;, &#x27;compile&#x27;, &#x27;complex&#x27;, &#x27;copyright&#x27;, &#x27;credits&#x27;,
+ &#x27;delattr&#x27;, &#x27;dict&#x27;, &#x27;dir&#x27;, &#x27;divmod&#x27;, &#x27;enumerate&#x27;, &#x27;eval&#x27;, &#x27;exec&#x27;, &#x27;exit&#x27;,
+ &#x27;filter&#x27;, &#x27;float&#x27;, &#x27;format&#x27;, &#x27;frozenset&#x27;, &#x27;getattr&#x27;, &#x27;globals&#x27;, &#x27;hasattr&#x27;,
+ &#x27;hash&#x27;, &#x27;help&#x27;, &#x27;hex&#x27;, &#x27;id&#x27;, &#x27;input&#x27;, &#x27;int&#x27;, &#x27;isinstance&#x27;, &#x27;issubclass&#x27;,
+ &#x27;iter&#x27;, &#x27;len&#x27;, &#x27;license&#x27;, &#x27;list&#x27;, &#x27;locals&#x27;, &#x27;map&#x27;, &#x27;max&#x27;, &#x27;memoryview&#x27;,
+ &#x27;min&#x27;, &#x27;next&#x27;, &#x27;object&#x27;, &#x27;oct&#x27;, &#x27;open&#x27;, &#x27;ord&#x27;, &#x27;pow&#x27;, &#x27;print&#x27;, &#x27;property&#x27;,
+ &#x27;quit&#x27;, &#x27;range&#x27;, &#x27;repr&#x27;, &#x27;reversed&#x27;, &#x27;round&#x27;, &#x27;set&#x27;, &#x27;setattr&#x27;, &#x27;slice&#x27;,
+ &#x27;sorted&#x27;, &#x27;staticmethod&#x27;, &#x27;str&#x27;, &#x27;sum&#x27;, &#x27;super&#x27;, &#x27;tuple&#x27;, &#x27;type&#x27;, &#x27;vars&#x27;,
+ &#x27;zip&#x27;]
+
+6.4. Packages¶
+
+Packages are a way of structuring Python’s module namespace by using “dotted
+module names”.  For example, the module name A.B designates a submodule
+named B in a package named A.  Just like the use of modules saves the
+authors of different modules from having to worry about each other’s global
+variable names, the use of dotted module names saves the authors of multi-module
+packages like NumPy or Pillow from having to worry about
+each other’s module names.
+
+Suppose you want to design a collection of modules (a “package”) for the uniform
+handling of sound files and sound data.  There are many different sound file
+formats (usually recognized by their extension, for example: .wav,
+.aiff, .au), so you may need to create and maintain a growing
+collection of modules for the conversion between the various file formats.
+There are also many different operations you might want to perform on sound data
+(such as mixing, adding echo, applying an equalizer function, creating an
+artificial stereo effect), so in addition you will be writing a never-ending
+stream of modules to perform these operations.  Here’s a possible structure for
+your package (expressed in terms of a hierarchical filesystem):
+
+sound/                          Top-level package
+      __init__.py               Initialize the sound package
+      formats/                  Subpackage for file format conversions
+              __init__.py
+              wavread.py
+              wavwrite.py
+              aiffread.py
+              aiffwrite.py
+              auread.py
+              auwrite.py
+              ...
+      effects/                  Subpackage for sound effects
+              __init__.py
+              echo.py
+              surround.py
+              reverse.py
+              ...
+      filters/                  Subpackage for filters
+              __init__.py
+              equalizer.py
+              vocoder.py
+              karaoke.py
+              ...
+
+When importing the package, Python searches through the directories on
+sys.path looking for the package subdirectory.
+
+The __init__.py files are required to make Python treat directories
+containing the file as packages (unless using a namespace package, a
+relatively advanced feature). This prevents directories with a common name,
+such as string, from unintentionally hiding valid modules that occur later
+on the module search path. In the simplest case, __init__.py can just be
+an empty file, but it can also execute initialization code for the package or
+set the __all__ variable, described later.
+
+Users of the package can import individual modules from the package, for
+example:
+
+import sound.effects.echo
+
+This loads the submodule sound.effects.echo.  It must be referenced with
+its full name.
+
+sound.effects.echo.echofilter(input, output, delay=0.7, atten=4)
+
+An alternative way of importing the submodule is:
+
+from sound.effects import echo
+
+This also loads the submodule echo, and makes it available without its
+package prefix, so it can be used as follows:
+
+echo.echofilter(input, output, delay=0.7, atten=4)
+
+Yet another variation is to import the desired function or variable directly:
+
+from sound.effects.echo import echofilter
+
+Again, this loads the submodule echo, but this makes its function
+echofilter() directly available:
+
+echofilter(input, output, delay=0.7, atten=4)
+
+Note that when using from package import item, the item can be either a
+submodule (or subpackage) of the package, or some  other name defined in the
+package, like a function, class or variable.  The import statement first
+tests whether the item is defined in the package; if not, it assumes it is a
+module and attempts to load it.  If it fails to find it, an ImportError
+exception is raised.
+
+Contrarily, when using syntax like import item.subitem.subsubitem, each item
+except for the last must be a package; the last item can be a module or a
+package but can’t be a class or function or variable defined in the previous
+item.
+
+6.4.1. Importing * From a Package¶
+
+Now what happens when the user writes from sound.effects import *?  Ideally,
+one would hope that this somehow goes out to the filesystem, finds which
+submodules are present in the package, and imports them all.  This could take a
+long time and importing sub-modules might have unwanted side-effects that should
+only happen when the sub-module is explicitly imported.
+
+The only solution is for the package author to provide an explicit index of the
+package.  The import statement uses the following convention: if a package’s
+__init__.py code defines a list named __all__, it is taken to be the
+list of module names that should be imported when from package import * is
+encountered.  It is up to the package author to keep this list up-to-date when a
+new version of the package is released.  Package authors may also decide not to
+support it, if they don’t see a use for importing * from their package.  For
+example, the file sound/effects/__init__.py could contain the following
+code:
+
+__all__ = [&quot;echo&quot;, &quot;surround&quot;, &quot;reverse&quot;]
+
+This would mean that from sound.effects import * would import the three
+named submodules of the sound.effects package.
+
+Be aware that submodules might become shadowed by locally defined names. For
+example, if you added a reverse function to the
+sound/effects/__init__.py file, the from sound.effects import *
+would only import the two submodules echo and surround, but not the
+reverse submodule, because it is shadowed by the locally defined
+reverse function:
+
+__all__ = [
+    &quot;echo&quot;,      # refers to the &#x27;echo.py&#x27; file
+    &quot;surround&quot;,  # refers to the &#x27;surround.py&#x27; file
+    &quot;reverse&quot;,   # !!! refers to the &#x27;reverse&#x27; function now !!!
+]
+
+def reverse(msg: str):  # &lt;-- this name shadows the &#x27;reverse.py&#x27; submodule
+    return msg[::-1]    #     in the case of a &#x27;from sound.effects import *&#x27;
+
+If __all__ is not defined, the statement from sound.effects import *
+does not import all submodules from the package sound.effects into the
+current namespace; it only ensures that the package sound.effects has
+been imported (possibly running any initialization code in __init__.py)
+and then imports whatever names are defined in the package.  This includes any
+names defined (and submodules explicitly loaded) by __init__.py.  It
+also includes any submodules of the package that were explicitly loaded by
+previous import statements.  Consider this code:
+
+import sound.effects.echo
+import sound.effects.surround
+from sound.effects import *
+
+In this example, the echo and surround modules are imported in the
+current namespace because they are defined in the sound.effects package
+when the from...import statement is executed.  (This also works when
+__all__ is defined.)
+
+Although certain modules are designed to export only names that follow certain
+patterns when you use import *, it is still considered bad practice in
+production code.
+
+Remember, there is nothing wrong with using from package import
+specific_submodule!  In fact, this is the recommended notation unless the
+importing module needs to use submodules with the same name from different
+packages.
+
+6.4.2. Intra-package References¶
+
+When packages are structured into subpackages (as with the sound package
+in the example), you can use absolute imports to refer to submodules of siblings
+packages.  For example, if the module sound.filters.vocoder needs to use
+the echo module in the sound.effects package, it can use from
+sound.effects import echo.
+
+You can also write relative imports, with the from module import name form
+of import statement.  These imports use leading dots to indicate the current and
+parent packages involved in the relative import.  From the surround
+module for example, you might use:
+
+from . import echo
+from .. import formats
+from ..filters import equalizer
+
+Note that relative imports are based on the name of the current module.  Since
+the name of the main module is always &quot;__main__&quot;, modules intended for use
+as the main module of a Python application must always use absolute imports.
+
+6.4.3. Packages in Multiple Directories¶
+
+Packages support one more special attribute, __path__.  This is
+initialized to be a sequence of strings containing the name of the
+directory holding the
+package’s __init__.py before the code in that file is executed.  This
+variable can be modified; doing so affects future searches for modules and
+subpackages contained in the package.
+
+While this feature is not often needed, it can be used to extend the set of
+modules found in a package.
+
+Footnotes
+
+[1]
+
+In fact function definitions are also ‘statements’ that are ‘executed’; the
+execution of a module-level function definition adds the function name to
+the module’s global namespace.
+
+Table of Contents
+
+6. Modules
+
+6.1. More on Modules
+
+6.1.1. Executing modules as scripts
+
+6.1.2. The Module Search Path
+
+6.1.3. “Compiled” Python files
+
+6.2. Standard Modules
+
+6.3. The dir() Function
+
+6.4. Packages
+
+6.4.1. Importing * From a Package
+
+6.4.2. Intra-package References
+
+6.4.3. Packages in Multiple Directories
+
+Previous topic
+
+5. Data Structures
+
+Next topic
+
+7. Input and Output
+
+This Page
+
+Report a Bug
+
+        Show Source
+
+«
+
+Navigation
+
+          index
+
+          modules |
+
+          next |
+
+          previous |
+
+Python »
+
+      3.12.15 Documentation »
+
+The Python Tutorial »
+
+6. Modules
+
+                     |
+
+    Theme
+    
+        Auto
+        Light
+        Dark
+    
+ |
+
+    © Copyright 2001-2026, Python Software Foundation.
+
+    This page is licensed under the Python Software Foundation License Version 2.
+
+    Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License.
+
+      See History and License for more information.
+
+    The Python Software Foundation is a non-profit corporation.
+Please donate.
+
+      Last updated on Oct 01, 2026 (15:25 UTC).
+    
+      Found a bug?
+
+    Created using Sphinx 8.2.3.</pre></html>

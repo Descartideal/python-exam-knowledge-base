@@ -1,0 +1,10 @@
+import numpy as np
+a = np.array([[55, 70, 90], [80, 60, 100]])
+print("shape:", a.shape)
+print("每行平均:", a.mean(axis=1))
+print("每列最大:", a.max(axis=0))
+print(">=80:", a[a >= 80])
+print("及格标记:", np.where(a >= 60, "pass", "fail"))
+print("变形:\n", a.reshape(3, 2))
+print("逐元素平方:\n", a * a)
+print("矩阵乘法 a @ a.T:\n", a @ a.T)

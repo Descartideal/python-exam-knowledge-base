@@ -1,0 +1,239 @@
+<!doctype html><html lang="zh"><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;"><title>WordCloud：参数与方法</title><style>body{max-width:1100px;margin:30px auto;padding:20px;font:16px/1.7 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.7 Consolas,monospace}a{color:#245ca1}</style><h1>WordCloud：参数与方法</h1><p>官方页面文字快照 · 下载日期 2026-10-10 · <span>本地官方正文</span> · <a href="wordcloud-api.source.txt">本地原始文本与版权声明</a></p><p>这是部分页面的离线备份。导航、交互示例和图片未同步；本文文字已保存在本地；未下载的导航目标与图片不参与阅读。中文学习归纳位于知识库对应章节。</p><hr><pre>wordcloud.WordCloud — wordcloud 1.8.1 documentation
+
+             wordcloud
+
+                1.8.1
+
+User Documentation
+
+API Reference
+
+wordcloud.WordCloud
+
+wordcloud.ImageColorGenerator
+
+wordcloud.random_color_func
+
+wordcloud.get_single_color_func
+
+Command Line Interface
+
+Gallery of Examples
+
+Changelog
+
+Contributor Documentation
+
+Making a release
+
+          wordcloud
+
+ »
+
+API Reference »
+
+wordcloud.WordCloud
+
+             View page source
+
+wordcloud.WordCloud¶
+
+class wordcloud.WordCloud(font_path=None, width=400, height=200, margin=2, ranks_only=None, prefer_horizontal=0.9, mask=None, scale=1, color_func=None, max_words=200, min_font_size=4, stopwords=None, random_state=None, background_color=&#x27;black&#x27;, max_font_size=None, font_step=1, mode=&#x27;RGB&#x27;, relative_scaling=&#x27;auto&#x27;, regexp=None, collocations=True, colormap=None, normalize_plurals=True, contour_width=0, contour_color=&#x27;black&#x27;, repeat=False, include_numbers=False, min_word_length=0, collocation_threshold=30)[source]¶
+
+Word cloud object for generating and drawing.
+
+Parameters
+
+font_pathstring
+Font path to the font that will be used (OTF or TTF).
+Defaults to DroidSansMono path on a Linux machine. If you are on
+another OS or don’t have this font, you need to adjust this path.
+
+widthint (default=400)
+Width of the canvas.
+
+heightint (default=200)
+Height of the canvas.
+
+prefer_horizontalfloat (default=0.90)
+The ratio of times to try horizontal fitting as opposed to vertical.
+If prefer_horizontal &lt; 1, the algorithm will try rotating the word
+if it doesn’t fit. (There is currently no built-in way to get only
+vertical words.)
+
+masknd-array or None (default=None)
+If not None, gives a binary mask on where to draw words. If mask is not
+None, width and height will be ignored and the shape of mask will be
+used instead. All white (#FF or #FFFFFF) entries will be considerd
+“masked out” while other entries will be free to draw on. [This
+changed in the most recent version!]
+
+contour_width: float (default=0)
+If mask is not None and contour_width &gt; 0, draw the mask contour.
+
+contour_color: color value (default=”black”)
+Mask contour color.
+
+scalefloat (default=1)
+Scaling between computation and drawing. For large word-cloud images,
+using scale instead of larger canvas size is significantly faster, but
+might lead to a coarser fit for the words.
+
+min_font_sizeint (default=4)
+Smallest font size to use. Will stop when there is no more room in this
+size.
+
+font_stepint (default=1)
+Step size for the font. font_step &gt; 1 might speed up computation but
+give a worse fit.
+
+max_wordsnumber (default=200)
+The maximum number of words.
+
+stopwordsset of strings or None
+The words that will be eliminated. If None, the build-in STOPWORDS
+list will be used. Ignored if using generate_from_frequencies.
+
+background_colorcolor value (default=”black”)
+Background color for the word cloud image.
+
+max_font_sizeint or None (default=None)
+Maximum font size for the largest word. If None, height of the image is
+used.
+
+modestring (default=”RGB”)
+Transparent background will be generated when mode is “RGBA” and
+background_color is None.
+
+relative_scalingfloat (default=’auto’)
+Importance of relative word frequencies for font-size.  With
+relative_scaling=0, only word-ranks are considered.  With
+relative_scaling=1, a word that is twice as frequent will have twice
+the size.  If you want to consider the word frequencies and not only
+their rank, relative_scaling around .5 often looks good.
+If ‘auto’ it will be set to 0.5 unless repeat is true, in which
+case it will be set to 0.
+
+color_funccallable, default=None
+Callable with parameters word, font_size, position, orientation,
+font_path, random_state that returns a PIL color for each word.
+Overwrites “colormap”.
+See colormap for specifying a matplotlib colormap instead.
+To create a word cloud with a single color, use
+color_func=lambda *args, **kwargs: &quot;white&quot;.
+The single color can also be specified using RGB code. For example
+color_func=lambda *args, **kwargs: (255,0,0) sets color to red.
+
+regexpstring or None (optional)
+Regular expression to split the input text into tokens in process_text.
+If None is specified, r&quot;\w[\w&#x27;]+&quot; is used. Ignored if using
+generate_from_frequencies.
+
+collocationsbool, default=True
+Whether to include collocations (bigrams) of two words. Ignored if using
+generate_from_frequencies.
+
+colormapstring or matplotlib colormap, default=”viridis”
+Matplotlib colormap to randomly draw colors from for each word.
+Ignored if “color_func” is specified.
+
+normalize_pluralsbool, default=True
+Whether to remove trailing ‘s’ from words. If True and a word
+appears with and without a trailing ‘s’, the one with trailing ‘s’
+is removed and its counts are added to the version without
+trailing ‘s’ – unless the word ends with ‘ss’. Ignored if using
+generate_from_frequencies.
+
+repeatbool, default=False
+Whether to repeat words and phrases until max_words or min_font_size
+is reached.
+
+include_numbersbool, default=False
+Whether to include numbers as phrases or not.
+
+min_word_lengthint, default=0
+Minimum number of letters a word must have to be included.
+
+collocation_threshold: int, default=30
+Bigrams must have a Dunning likelihood collocation score greater than this
+parameter to be counted as bigrams. Default of 30 is arbitrary.
+
+See Manning, C.D., Manning, C.D. and Schütze, H., 1999. Foundations of
+Statistical Natural Language Processing. MIT press, p. 162
+https://nlp.stanford.edu/fsnlp/promo/colloc.pdf#page=22
+
+Notes
+
+Larger canvases with make the code significantly slower. If you need a
+large word cloud, try a lower canvas size, and set the scale parameter.
+
+The algorithm might give more weight to the ranking of the words
+than their actual frequencies, depending on the max_font_size and the
+scaling heuristic.
+
+Attributes
+
+``words_``dict of string to float
+Word tokens with associated frequency.
+
+``layout_``list of tuples (string, int, (int, int), int, color))
+Encodes the fitted word cloud. Encodes for each word the string, font
+size, position, orientation and color.
+
+Methods
+
+fit_words(frequencies)
+
+Create a word_cloud from words and frequencies.
+
+generate(text)
+
+Generate wordcloud from text.
+
+generate_from_frequencies(frequencies[, …])
+
+Create a word_cloud from words and frequencies.
+
+generate_from_text(text)
+
+Generate wordcloud from text.
+
+process_text(text)
+
+Splits a long text into words, eliminates the stopwords.
+
+recolor([random_state, color_func, colormap])
+
+Recolor existing layout.
+
+to_array()
+
+Convert to numpy array.
+
+to_file(filename)
+
+Export to image file.
+
+to_svg([embed_font, optimize_embedded_font, …])
+
+Export to SVG.
+
+to_html
+
+to_image
+
+__init__(font_path=None, width=400, height=200, margin=2, ranks_only=None, prefer_horizontal=0.9, mask=None, scale=1, color_func=None, max_words=200, min_font_size=4, stopwords=None, random_state=None, background_color=&#x27;black&#x27;, max_font_size=None, font_step=1, mode=&#x27;RGB&#x27;, relative_scaling=&#x27;auto&#x27;, regexp=None, collocations=True, colormap=None, normalize_plurals=True, contour_width=0, contour_color=&#x27;black&#x27;, repeat=False, include_numbers=False, min_word_length=0, collocation_threshold=30)[source]¶
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+        Next 
+
+         Previous
+
+        © Copyright 2020, Andreas Mueller
+
+    Built with Sphinx using a
+    
+    theme
+    
+    provided by Read the Docs.</pre></html>

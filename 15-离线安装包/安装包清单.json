@@ -1,0 +1,128 @@
+[
+  {
+    "name": "contourpy",
+    "version": "1.4.0",
+    "file": "contourpy-1.4.0-cp312-cp312-win_amd64.whl",
+    "bytes": 234083,
+    "sha256": "6e697d94e69f499ff6bebb899cae97a58d5d14f0e1fe9568b43a0248d2f9af8c"
+  },
+  {
+    "name": "cycler",
+    "version": "0.12.1",
+    "file": "cycler-0.12.1-py3-none-any.whl",
+    "bytes": 8321,
+    "sha256": "85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30"
+  },
+  {
+    "name": "et_xmlfile",
+    "version": "2.0.0",
+    "file": "et_xmlfile-2.0.0-py3-none-any.whl",
+    "bytes": 18059,
+    "sha256": "7a91720bc756843502c3b7504c77b8fe44217c85c537d85037f0f536151b2caa"
+  },
+  {
+    "name": "fonttools",
+    "version": "4.66.1",
+    "file": "fonttools-4.66.1-cp312-cp312-win_amd64.whl",
+    "bytes": 2486987,
+    "sha256": "261d8dc95845e751f975fe8d6075600593ee253470d46d1b84801688051b09f6"
+  },
+  {
+    "name": "jieba",
+    "version": "0.42.1",
+    "file": "jieba-0.42.1-py3-none-any.whl",
+    "bytes": 19314527,
+    "sha256": "448f89d82a72b042bb462e27c23f063b421e3edb04db34365b2e0d96cdbba46b"
+  },
+  {
+    "name": "kiwisolver",
+    "version": "1.5.1",
+    "file": "kiwisolver-1.5.1-cp312-cp312-win_amd64.whl",
+    "bytes": 70748,
+    "sha256": "06a6917674de9e0fe3f66f5430787f59a9f2ddb64af9b714eaec547e29ef5c19"
+  },
+  {
+    "name": "matplotlib",
+    "version": "3.10.9",
+    "file": "matplotlib-3.10.9-cp312-cp312-win_amd64.whl",
+    "bytes": 8217462,
+    "sha256": "d091f9d758b34aaaaa6331d13574bf01891d903b3dec59bfff458ef7551de5d6"
+  },
+  {
+    "name": "numpy",
+    "version": "2.4.6",
+    "file": "numpy-2.4.6-cp312-cp312-win_amd64.whl",
+    "bytes": 12321687,
+    "sha256": "d8e8286dd7cea7895157318d1b91cdacac64c479f3cbc8dce548331728484751"
+  },
+  {
+    "name": "opencv-python",
+    "version": "5.0.0.93",
+    "file": "opencv_python-5.0.0.93-cp37-abi3-win_amd64.whl",
+    "bytes": 44000345,
+    "sha256": "f90ba04b8f73bc5c3814037699739f0156f597338a98f05956c684e7c3ca10d2"
+  },
+  {
+    "name": "openpyxl",
+    "version": "3.1.5",
+    "file": "openpyxl-3.1.5-py2.py3-none-any.whl",
+    "bytes": 250910,
+    "sha256": "5282c12b107bffeef825f4617dc029afaf41d0ea60823bbb665ef3079dc79de2"
+  },
+  {
+    "name": "packaging",
+    "version": "26.3",
+    "file": "packaging-26.3-py3-none-any.whl",
+    "bytes": 129956,
+    "sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c"
+  },
+  {
+    "name": "pandas",
+    "version": "3.0.3",
+    "file": "pandas-3.0.3-cp312-cp312-win_amd64.whl",
+    "bytes": 9755463,
+    "sha256": "c7be265b62cef88e253a941e4698604973736dcfe242fdb5198f0f7bc473cdcc"
+  },
+  {
+    "name": "pillow",
+    "version": "12.2.0",
+    "file": "pillow-12.2.0-cp312-cp312-win_amd64.whl",
+    "bytes": 7084129,
+    "sha256": "7f84204dee22a783350679a0333981df803dac21a0190d706a50475e361c93f5"
+  },
+  {
+    "name": "pyparsing",
+    "version": "3.3.3",
+    "file": "pyparsing-3.3.3-py3-none-any.whl",
+    "bytes": 126420,
+    "sha256": "ece8c00a69cf01b45d0b1dedabb469c90d8caf996d4fda40f147627a122849a4"
+  },
+  {
+    "name": "python-dateutil",
+    "version": "2.9.0.post0",
+    "file": "python_dateutil-2.9.0.post0-py2.py3-none-any.whl",
+    "bytes": 229892,
+    "sha256": "a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"
+  },
+  {
+    "name": "six",
+    "version": "1.17.0",
+    "file": "six-1.17.0-py2.py3-none-any.whl",
+    "bytes": 11050,
+    "sha256": "4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274"
+  },
+  {
+    "name": "tzdata",
+    "version": "2026.5",
+    "file": "tzdata-2026.5-py2.py3-none-any.whl",
+    "bytes": 347996,
+    "sha256": "b683bd1b6659ddcd810ff02ad09ba821d4bf1065072805063eb35c49617905ac"
+  },
+  {
+    "name": "wordcloud",
+    "version": "1.9.6",
+    "file": "wordcloud-1.9.6-cp312-cp312-win_amd64.whl",
+    "bytes": 307222,
+    "sha256": "7977a1727e059d6ba0a679dacbab57a966ab28913fc1764079efdfdc67f8e4d2"
+  }
+]

@@ -1,0 +1,452 @@
+<!doctype html><html lang="zh"><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;"><title>NumPy：数组文件读写</title><style>body{max-width:1100px;margin:30px auto;padding:20px;font:16px/1.7 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.7 Consolas,monospace}a{color:#245ca1}</style><h1>NumPy：数组文件读写</h1><p>官方页面文字快照 · 下载日期 2026-10-10 · <span>本地官方正文</span> · <a href="numpy-io.source.txt">本地原始文本与版权声明</a></p><p>这是部分页面的离线备份。导航、交互示例和图片未同步；本文文字已保存在本地；未下载的导航目标与图片不参与阅读。中文学习归纳位于知识库对应章节。</p><hr><pre>Reading and writing files — NumPy v2.5 Manual
+
+Skip to main content
+
+    Back to top
+
+  Ctrl+K
+
+    User Guide
+
+    API reference
+
+    Building from source
+
+    Development
+
+    Release notes
+
+    Learn
+
+    NEPs
+
+    Choose version  
+
+            GitHub
+
+    User Guide
+
+    API reference
+
+    Building from source
+
+    Development
+
+    Release notes
+
+    Learn
+
+    NEPs
+
+    Choose version  
+
+            GitHub
+
+  Collapse Sidebar
+  Expand Sidebar
+
+Section Navigation
+
+Getting started
+
+What is NumPy?
+
+Installation
+
+NumPy quickstart
+
+NumPy: the absolute basics for beginners
+
+Fundamentals and usage
+
+NumPy fundamentals
+
+NumPy for MATLAB users
+
+NumPy tutorials
+
+NumPy how-tos
+
+How to write a NumPy how-to
+
+Reading and writing files
+
+How to index ndarrays
+
+Verifying bugs and bug fixes in NumPy
+
+How to create arrays with regularly-spaced values
+
+Printing NumPy Arrays
+
+Advanced usage and interoperability
+
+Using NumPy C-API
+
+F2PY user guide and reference manual
+
+Under-the-hood documentation for developers
+
+Interoperability with NumPy
+
+Writing Performant NumPy Code with Multi-Core CPUs
+
+Extras
+
+Glossary
+
+Release notes
+
+NumPy 2.0 migration guide
+
+NumPy license
+
+NumPy user guide
+
+NumPy how-tos
+
+Reading and writing files
+
+Reading and writing files#
+
+This page tackles common applications; for the full collection of I/O
+routines, see Input and output.
+
+Reading text and CSV files#
+
+With no missing values#
+
+Use numpy.loadtxt.
+
+With missing values#
+
+Use numpy.genfromtxt.
+
+numpy.genfromtxt will either
+
+return a masked array
+masking out missing values (if usemask=True), or
+
+fill in the missing value with the value specified in
+filling_values (default is np.nan for float, -1 for int).
+
+With non-whitespace delimiters#
+
+&gt;&gt;&gt; with open(&quot;csv.txt&quot;, &quot;r&quot;) as f:
+...     print(f.read())
+1, 2, 3
+4,, 6
+7, 8, 9
+
+Masked-array output#
+
+&gt;&gt;&gt; np.genfromtxt(&quot;csv.txt&quot;, delimiter=&quot;,&quot;, usemask=True)
+masked_array(
+  data=[[1.0, 2.0, 3.0],
+        [4.0, --, 6.0],
+        [7.0, 8.0, 9.0]],
+  mask=[[False, False, False],
+        [False,  True, False],
+        [False, False, False]],
+  fill_value=1e+20)
+
+Array output#
+
+&gt;&gt;&gt; np.genfromtxt(&quot;csv.txt&quot;, delimiter=&quot;,&quot;)
+array([[ 1.,  2.,  3.],
+       [ 4., nan,  6.],
+       [ 7.,  8.,  9.]])
+
+Array output, specified fill-in value#
+
+&gt;&gt;&gt; np.genfromtxt(&quot;csv.txt&quot;, delimiter=&quot;,&quot;, dtype=np.int8, filling_values=99)
+array([[ 1,  2,  3],
+       [ 4, 99,  6],
+       [ 7,  8,  9]], dtype=int8)
+
+Whitespace-delimited#
+
+numpy.genfromtxt can also parse whitespace-delimited data files
+that have missing values if
+
+Each field has a fixed width: Use the width as the delimiter argument.:
+
+# File with width=4. The data does not have to be justified (for example,
+# the 2 in row 1), the last column can be less than width (for example, the 6
+# in row 2), and no delimiting character is required (for instance 8888 and 9
+# in row 3)
+
+&gt;&gt;&gt; with open(&quot;fixedwidth.txt&quot;, &quot;r&quot;) as f:
+...    data = (f.read())
+&gt;&gt;&gt; print(data)
+1   2      3
+44      6
+7   88889
+
+# Showing spaces as ^
+&gt;&gt;&gt; print(data.replace(&quot; &quot;,&quot;^&quot;))
+1^^^2^^^^^^3
+44^^^^^^6
+7^^^88889
+
+&gt;&gt;&gt; np.genfromtxt(&quot;fixedwidth.txt&quot;, delimiter=4)
+array([[1.000e+00, 2.000e+00, 3.000e+00],
+       [4.400e+01,       nan, 6.000e+00],
+       [7.000e+00, 8.888e+03, 9.000e+00]])
+
+A special value (e.g. “x”) indicates a missing field: Use it as the
+missing_values argument.
+
+&gt;&gt;&gt; with open(&quot;nan.txt&quot;, &quot;r&quot;) as f:
+...     print(f.read())
+1 2 3
+44 x 6
+7  8888 9
+
+&gt;&gt;&gt; np.genfromtxt(&quot;nan.txt&quot;, missing_values=&quot;x&quot;)
+array([[1.000e+00, 2.000e+00, 3.000e+00],
+       [4.400e+01,       nan, 6.000e+00],
+       [7.000e+00, 8.888e+03, 9.000e+00]])
+
+You want to skip the rows with missing values: Set
+invalid_raise=False.
+
+&gt;&gt;&gt; with open(&quot;skip.txt&quot;, &quot;r&quot;) as f:
+...     print(f.read())
+1 2   3
+44    6
+7 888 9
+
+&gt;&gt;&gt; np.genfromtxt(&quot;skip.txt&quot;, invalid_raise=False)  
+__main__:1: ConversionWarning: Some errors were detected !
+    Line #2 (got 2 columns instead of 3)
+array([[  1.,   2.,   3.],
+       [  7., 888.,   9.]])
+
+The delimiter whitespace character is different from the whitespace that
+indicates missing data. For instance, if columns are delimited by \t,
+then missing data will be recognized if it consists of one
+or more spaces.:
+
+&gt;&gt;&gt; with open(&quot;tabs.txt&quot;, &quot;r&quot;) as f:
+...    data = (f.read())
+&gt;&gt;&gt; print(data)
+1       2       3
+44              6
+7       888     9
+
+# Tabs vs. spaces
+&gt;&gt;&gt; print(data.replace(&quot;\t&quot;,&quot;^&quot;))
+1^2^3
+44^ ^6
+7^888^9
+
+&gt;&gt;&gt; np.genfromtxt(&quot;tabs.txt&quot;, delimiter=&quot;\t&quot;, missing_values=&quot; +&quot;)
+array([[  1.,   2.,   3.],
+       [ 44.,  nan,   6.],
+       [  7., 888.,   9.]])
+
+Read a file in .npy or .npz format#
+
+Choices:
+
+Use numpy.load. It can read files generated by any of
+numpy.save, numpy.savez, or numpy.savez_compressed.
+
+Use memory mapping. See numpy.lib.format.open_memmap.
+
+Write to a file to be read back by NumPy#
+
+Binary#
+
+Use
+numpy.save, or to store multiple arrays numpy.savez
+or numpy.savez_compressed.
+
+For security and portability, set
+allow_pickle=False unless the dtype contains Python objects, which
+requires pickling.
+
+Masked arrays can&#x27;t currently be saved,
+nor can other arbitrary array subclasses.
+
+Human-readable#
+
+numpy.save and numpy.savez create binary files. To write a
+human-readable file, use numpy.savetxt. The array can only be 1- or
+2-dimensional, and there’s no savetxtz for multiple files.
+
+Large arrays#
+
+See Write or read large arrays.
+
+Read an arbitrarily formatted binary file (“binary blob”)#
+
+Use a structured array.
+
+Example:
+
+The .wav file header is a 44-byte block preceding data_size bytes of the
+actual sound data:
+
+chunk_id         &quot;RIFF&quot;
+chunk_size       4-byte unsigned little-endian integer
+format           &quot;WAVE&quot;
+fmt_id           &quot;fmt &quot;
+fmt_size         4-byte unsigned little-endian integer
+audio_fmt        2-byte unsigned little-endian integer
+num_channels     2-byte unsigned little-endian integer
+sample_rate      4-byte unsigned little-endian integer
+byte_rate        4-byte unsigned little-endian integer
+block_align      2-byte unsigned little-endian integer
+bits_per_sample  2-byte unsigned little-endian integer
+data_id          &quot;data&quot;
+data_size        4-byte unsigned little-endian integer
+
+The .wav file header as a NumPy structured dtype:
+
+wav_header_dtype = np.dtype([
+    (&quot;chunk_id&quot;, (bytes, 4)), # flexible-sized scalar type, item size 4
+    (&quot;chunk_size&quot;, &quot;&lt;u4&quot;),    # little-endian unsigned 32-bit integer
+    (&quot;format&quot;, &quot;S4&quot;),         # 4-byte string, alternate spelling of (bytes, 4)
+    (&quot;fmt_id&quot;, &quot;S4&quot;),
+    (&quot;fmt_size&quot;, &quot;&lt;u4&quot;),
+    (&quot;audio_fmt&quot;, &quot;&lt;u2&quot;),     #
+    (&quot;num_channels&quot;, &quot;&lt;u2&quot;),  # .. more of the same ...
+    (&quot;sample_rate&quot;, &quot;&lt;u4&quot;),   #
+    (&quot;byte_rate&quot;, &quot;&lt;u4&quot;),
+    (&quot;block_align&quot;, &quot;&lt;u2&quot;),
+    (&quot;bits_per_sample&quot;, &quot;&lt;u2&quot;),
+    (&quot;data_id&quot;, &quot;S4&quot;),
+    (&quot;data_size&quot;, &quot;&lt;u4&quot;),
+    #
+    # the sound data itself cannot be represented here:
+    # it does not have a fixed size
+])
+
+header = np.fromfile(f, dtype=wave_header_dtype, count=1)[0]
+
+This .wav example is for illustration; to read a .wav file in real
+life, use Python’s built-in module wave.
+
+(Adapted from Pauli Virtanen, Advanced NumPy, licensed
+under CC BY 4.0.)
+
+Write or read large arrays#
+
+Arrays too large to fit in memory can be treated like ordinary in-memory
+arrays using memory mapping.
+
+Raw array data written with numpy.ndarray.tofile or
+numpy.ndarray.tobytes can be read with numpy.memmap:
+
+array = numpy.memmap(&quot;mydata/myarray.arr&quot;, mode=&quot;r&quot;, dtype=np.int16, shape=(1024, 1024))
+
+Files output by numpy.save (that is, using the numpy format) can be read
+using numpy.load with the mmap_mode keyword argument:
+
+large_array[some_slice] = np.load(&quot;path/to/small_array&quot;, mmap_mode=&quot;r&quot;)
+
+Memory mapping lacks features like data chunking and compression; more
+full-featured formats and libraries usable with NumPy include:
+
+HDF5: h5py or PyTables.
+
+Zarr: here.
+
+NetCDF: scipy.io.netcdf_file.
+
+For tradeoffs among memmap, Zarr, and HDF5, see
+pythonspeed.com.
+
+Write files for reading by other (non-NumPy) tools#
+
+Formats for exchanging data with other tools include HDF5, Zarr, and
+NetCDF (see Write or read large arrays).
+
+Write or read a JSON file#
+
+NumPy arrays and most NumPy scalars are not directly
+JSON serializable.
+Instead, use a custom json.JSONEncoder for NumPy types, which can
+be found using your favorite search engine.
+
+Save/restore using a pickle file#
+
+Avoid when possible; pickles are not secure
+against erroneous or maliciously constructed data.
+
+Use numpy.save and numpy.load.  Set allow_pickle=False,
+unless the array dtype includes Python objects, in which case pickling is
+required.
+
+numpy.load and pickle submodule also support unpickling files
+created with NumPy 1.26.
+
+Convert from a pandas DataFrame to a NumPy array#
+
+See pandas.Series.to_numpy.
+
+Save/restore using tofile and fromfile#
+
+In general, prefer numpy.save and numpy.load.
+
+numpy.ndarray.tofile and numpy.fromfile lose information on
+endianness and precision and so are unsuitable for anything but scratch
+storage.
+
+previous
+
+How to write a NumPy how-to
+
+next
+
+How to index ndarrays
+
+     On this page
+
+Reading text and CSV files
+
+With no missing values
+
+With missing values
+
+With non-whitespace delimiters
+
+Masked-array output
+
+Array output
+
+Array output, specified fill-in value
+
+Whitespace-delimited
+
+Read a file in .npy or .npz format
+
+Write to a file to be read back by NumPy
+
+Binary
+
+Human-readable
+
+Large arrays
+
+Read an arbitrarily formatted binary file (“binary blob”)
+
+Write or read large arrays
+
+Write files for reading by other (non-NumPy) tools
+
+Write or read a JSON file
+
+Save/restore using a pickle file
+
+Convert from a pandas DataFrame to a NumPy array
+
+Save/restore using tofile and fromfile
+
+      © Copyright 2008-2026, NumPy Developers.
+
+    Created using Sphinx 7.2.6.
+
+  Built with the PyData Sphinx Theme 0.17.1.</pre></html>

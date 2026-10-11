@@ -1,0 +1,878 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="search" title="Search" href="../../search/"><link rel="copyright" title="Copyright" href="../../copyright/"><link rel="next" title="pip wheel" href="../pip_wheel/"><link rel="prev" title="pip lock" href="../pip_lock/">
+
+    <!-- Generated with Sphinx 7.4.7 and Furo 2025.12.19 -->
+        <title>pip download - pip documentation v26.2.1</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style><script async type="text/javascript" src="/_/static/javascript/readthedocs-addons.js"></script><meta name="readthedocs-project-slug" content="pip" /><meta name="readthedocs-version-slug" content="stable" /><meta name="readthedocs-resolver-filename" content="/cli/pip_download/" /><meta name="readthedocs-http-status" content="200" /></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../"><div class="brand">pip documentation v26.2.1</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../">
+  
+  <span class="sidebar-brand-text">pip documentation v26.2.1</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../search/" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started/">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user_guide/">User Guide</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../topics/">Topic Guides</a><input aria-label="Toggle navigation of Topic Guides" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../topics/authentication/">Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../topics/caching/">Caching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../topics/configuration/">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../topics/dependency-resolution/">Dependency Resolution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../topics/more-dependency-resolution/">More on Dependency Resolution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../topics/https-certificates/">HTTPS Certificates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../topics/local-project-installs/">Local project installs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../topics/repeatable-installs/">Repeatable Installs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../topics/secure-installs/">Secure installs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../topics/vcs-support/">VCS Support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../topics/python-option/">Managing a different Python interpreter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../topics/workflow/">Pip is not a workflow management tool</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../reference/">Reference</a><input aria-label="Toggle navigation of Reference" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../reference/build-system/">Build System Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../reference/requirement-specifiers/">Requirement Specifiers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../reference/requirements-file-format/">Requirements File Format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../reference/installation-report/">Installation Report</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../reference/inspect-report/"><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">inspect</span></code> JSON output specification</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../">Commands</a><input aria-label="Toggle navigation of Commands" checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../pip/">pip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pip_install/">pip install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pip_uninstall/">pip uninstall</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pip_inspect/">pip inspect</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pip_list/">pip list</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pip_show/">pip show</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pip_freeze/">pip freeze</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pip_check/">pip check</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pip_lock/">pip lock</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">pip download</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pip_wheel/">pip wheel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pip_hash/">pip hash</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pip_search/">pip search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pip_index/">pip index</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pip_cache/">pip cache</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pip_config/">pip config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pip_debug/">pip debug</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../development/">Development</a><input aria-label="Toggle navigation of Development" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../development/getting-started/">Getting Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../development/contributing/">Contributing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../development/ci/">Continuous Integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../development/issue-triage/">Issue Triage</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../development/architecture/">Architecture of pip’s internals</a><input aria-label="Toggle navigation of Architecture of pip’s internals" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../development/architecture/overview/">Broad functionality overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../development/architecture/anatomy/">Repository anatomy &amp; directory structure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../development/architecture/configuration-files/">Configuration File Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../development/architecture/package-finding/">Finding and choosing files (<code class="docutils literal notranslate"><span class="pre">index</span></code> and <code class="docutils literal notranslate"><span class="pre">PackageFinder</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../development/architecture/command-line-interface/">Command Line Interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../development/architecture/upgrade-options/">Options that control the installation process</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../development/release-process/">Release process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../development/vendoring-policy/">Vendoring Policy</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../ux-research-design/">UX Research &amp; Design</a><input aria-label="Toggle navigation of UX Research &amp; Design" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../ux-research-design/contribute/">How to Contribute</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ux-research-design/guidance/">UX Guidance</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../ux-research-design/research-results/">UX Research Results</a><input aria-label="Toggle navigation of UX Research Results" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../ux-research-design/research-results/about-our-users/">About pip’s Users</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ux-research-design/research-results/mental-models/">How Users Understand pip</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ux-research-design/research-results/users-and-security/">How pip users think about security</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ux-research-design/research-results/ci-cd/">How pip is used in interactive environments (i.e. CI, CD)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ux-research-design/research-results/personas/">pip Personas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ux-research-design/research-results/prioritizing-features/">Prioritizing pip Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ux-research-design/research-results/override-conflicting-dependencies/">Providing an override to install packages with conflicting dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ux-research-design/research-results/pip-force-reinstall/">pip --force-reinstall</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ux-research-design/research-results/pip-search/">pip search</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ux-research-design/research-results/pip-upgrade-conflict/">pip Upgrade Conflict</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ux-research-design/research-results/improving-pips-documentation/">Improving pip’s Documentation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../news/">Changelog</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/pypa/.github/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/pypa/pip">GitHub</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../../_sources/cli/pip_download.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="pip-download">
+<span id="id1"></span><h1>pip download<a class="headerlink" href="#pip-download" title="Link to this heading">¶</a></h1>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading">¶</a></h2>
+<div class="tab-set docutils">
+<input checked="True" class="tab-input" id="tab-set--0-input--1" name="tab-set--0" type="radio" /><label class="tab-label" for="tab-set--0-input--1">Unix/macOS</label><div class="tab-content docutils">
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">download</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">requirement</span> <span class="n">specifier</span><span class="o">&gt;</span> <span class="p">[</span><span class="n">package</span><span class="o">-</span><span class="n">index</span><span class="o">-</span><span class="n">options</span><span class="p">]</span> <span class="o">...</span>
+<span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">download</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="o">-</span><span class="n">r</span> <span class="o">&lt;</span><span class="n">requirements</span> <span class="n">file</span><span class="o">&gt;</span> <span class="p">[</span><span class="n">package</span><span class="o">-</span><span class="n">index</span><span class="o">-</span><span class="n">options</span><span class="p">]</span> <span class="o">...</span>
+<span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">download</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">vcs</span> <span class="n">project</span> <span class="n">url</span><span class="o">&gt;</span> <span class="o">...</span>
+<span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">download</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">local</span> <span class="n">project</span> <span class="n">path</span><span class="o">&gt;</span> <span class="o">...</span>
+<span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">download</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">archive</span> <span class="n">url</span><span class="o">/</span><span class="n">path</span><span class="o">&gt;</span> <span class="o">...</span>
+</pre></div>
+</div>
+</div>
+<input class="tab-input" id="tab-set--0-input--2" name="tab-set--0" type="radio" /><label class="tab-label" for="tab-set--0-input--2">Windows</label><div class="tab-content docutils">
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">py</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">download</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">requirement</span> <span class="n">specifier</span><span class="o">&gt;</span> <span class="p">[</span><span class="n">package</span><span class="o">-</span><span class="n">index</span><span class="o">-</span><span class="n">options</span><span class="p">]</span> <span class="o">...</span>
+<span class="n">py</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">download</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="o">-</span><span class="n">r</span> <span class="o">&lt;</span><span class="n">requirements</span> <span class="n">file</span><span class="o">&gt;</span> <span class="p">[</span><span class="n">package</span><span class="o">-</span><span class="n">index</span><span class="o">-</span><span class="n">options</span><span class="p">]</span> <span class="o">...</span>
+<span class="n">py</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">download</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">vcs</span> <span class="n">project</span> <span class="n">url</span><span class="o">&gt;</span> <span class="o">...</span>
+<span class="n">py</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">download</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">local</span> <span class="n">project</span> <span class="n">path</span><span class="o">&gt;</span> <span class="o">...</span>
+<span class="n">py</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">download</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="o">&lt;</span><span class="n">archive</span> <span class="n">url</span><span class="o">/</span><span class="n">path</span><span class="o">&gt;</span> <span class="o">...</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="description">
+<h2>Description<a class="headerlink" href="#description" title="Link to this heading">¶</a></h2>
+<p><p>Download packages from:</p>
+<ul class="simple">
+<li><p>PyPI (and other indexes) using requirement specifiers.</p></li>
+<li><p>VCS project urls.</p></li>
+<li><p>Local project directories.</p></li>
+<li><p>Local or remote source archives.</p></li>
+</ul>
+<p>pip also supports downloading from “requirements files”, which provide
+an easy way to specify a whole environment to be downloaded.</p>
+</p>
+<section id="overview">
+<h3>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">download</span></code> does the same resolution and downloading as <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code>,
+but instead of installing the dependencies, it collects the downloaded
+distributions into the directory provided (defaulting to the current
+directory). This directory can later be passed as the value to <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span>
+<span class="pre">--find-links</span></code> to facilitate offline or locked down package installation.</p>
+<p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">download</span></code> with the <code class="docutils literal notranslate"><span class="pre">--platform</span></code>, <code class="docutils literal notranslate"><span class="pre">--python-version</span></code>,
+<code class="docutils literal notranslate"><span class="pre">--implementation</span></code>, and <code class="docutils literal notranslate"><span class="pre">--abi</span></code> options provides the ability to fetch
+dependencies for an interpreter and system other than the ones that pip is
+running on. <code class="docutils literal notranslate"><span class="pre">--only-binary=:all:</span></code> or <code class="docutils literal notranslate"><span class="pre">--no-deps</span></code> is required when using any
+of these options. It is important to note that these options all default to the
+current system/interpreter, and not to the most restrictive constraints (e.g.
+platform any, abi none, etc). To avoid fetching dependencies that happen to
+match the constraint of the current interpreter (but not your target one), it
+is recommended to specify all of these options if you are specifying one of
+them. Generic dependencies (e.g. universal wheels, or dependencies with no
+platform, abi, or implementation constraints) will still match an over-
+constrained download requirement. If some of your dependencies are not
+available as binaries, you can build them manually for your target platform
+and let pip download know where to find them using <code class="docutils literal notranslate"><span class="pre">--find-links</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To determine the appropriate values for <code class="docutils literal notranslate"><span class="pre">--python-version</span></code> and <code class="docutils literal notranslate"><span class="pre">--platform</span></code>, you can query the target system using the following commands:</p>
+<ul class="simple">
+<li><p>For the Python version, use <a class="reference external" href="https://docs.python.org/3/library/sysconfig.html#sysconfig.get_python_version" title="(in Python v3.14)"><code class="xref py py-func docutils literal notranslate"><span class="pre">sysconfig.get_python_version()</span></code></a>.</p></li>
+<li><p>For the platform, use <a class="reference external" href="https://packaging.pypa.io/en/stable/tags.html#packaging.tags.platform_tags" title="(in Packaging v26.3)"><code class="xref py py-func docutils literal notranslate"><span class="pre">packaging.tags.platform_tags()</span></code></a>.</p></li>
+</ul>
+</div>
+</section>
+</section>
+<section id="options">
+<h2>Options<a class="headerlink" href="#options" title="Link to this heading">¶</a></h2>
+<p><span class="target" id="download-constraint"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-c">
+<span id="cmdoption-constraint"></span><span class="sig-name descname"><span class="pre">-c</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--constraint</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;file&gt;</span></span><a class="headerlink" href="#cmdoption-c" title="Link to this definition">¶</a></dt>
+<dd><p>Constrain versions using the given constraints file. This option can be used multiple times.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_CONSTRAINT</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-build-constraint"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-build-constraint">
+<span class="sig-name descname"><span class="pre">--build-constraint</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;file&gt;</span></span><a class="headerlink" href="#cmdoption-build-constraint" title="Link to this definition">¶</a></dt>
+<dd><p>Constrain build dependencies using the given constraints file. This option can be used multiple times.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_BUILD_CONSTRAINT</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-requirement"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-r">
+<span id="cmdoption-requirement"></span><span class="sig-name descname"><span class="pre">-r</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--requirement</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;file&gt;</span></span><a class="headerlink" href="#cmdoption-r" title="Link to this definition">¶</a></dt>
+<dd><p>Install from the given requirements file. The file or URL can be in pip’s requirements.txt format, or pylock.toml format. pylock.toml support is experimental. This option can be used multiple times.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_REQUIREMENT</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-requirements-from-script"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-requirements-from-script">
+<span class="sig-name descname"><span class="pre">--requirements-from-script</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;file&gt;</span></span><a class="headerlink" href="#cmdoption-requirements-from-script" title="Link to this definition">¶</a></dt>
+<dd><p>Install dependencies of the given script file as defined by PEP 723 inline metadata.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_REQUIREMENTS_FROM_SCRIPT</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-no-deps"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-no-deps">
+<span class="sig-name descname"><span class="pre">--no-deps</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-no-deps" title="Link to this definition">¶</a></dt>
+<dd><p>Don’t install package dependencies.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_NO_DEPS</span></code>, <code class="docutils literal notranslate"><span class="pre">PIP_NO_DEPENDENCIES</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-only-deps"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-only-deps">
+<span class="sig-name descname"><span class="pre">--only-deps</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-only-deps" title="Link to this definition">¶</a></dt>
+<dd><p>Take only the dependencies of the provided requirements into account, not the requirements themselves. Cannot be used in combination with --no-deps, --group, --requirement, or --requirements-from-script. No user-supplied requirements will be handled, even if they were dependencies of other user-supplied requirements.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_ONLY_DEPS</span></code>, <code class="docutils literal notranslate"><span class="pre">PIP_ONLY_DEPENDENCIES</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-src"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-src">
+<span class="sig-name descname"><span class="pre">--src</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;dir&gt;</span></span><a class="headerlink" href="#cmdoption-src" title="Link to this definition">¶</a></dt>
+<dd><p>Directory to check out editable projects into. The default in a virtualenv is “&lt;venv path&gt;/src”. The default for global installs is “&lt;current dir&gt;/src”.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_SRC</span></code>, <code class="docutils literal notranslate"><span class="pre">PIP_SOURCE</span></code>, <code class="docutils literal notranslate"><span class="pre">PIP_SOURCE_DIR</span></code>, <code class="docutils literal notranslate"><span class="pre">PIP_SOURCE_DIRECTORY</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-require-hashes"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-require-hashes">
+<span class="sig-name descname"><span class="pre">--require-hashes</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-require-hashes" title="Link to this definition">¶</a></dt>
+<dd><p>Require a hash to check each requirement against, for repeatable installs. This option is implied when any package in a requirements file has a --hash option.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_REQUIRE_HASHES</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-no-require-hashes"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-no-require-hashes">
+<span class="sig-name descname"><span class="pre">--no-require-hashes</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-no-require-hashes" title="Link to this definition">¶</a></dt>
+<dd><p>Do not automatically enable --require-hashes when encountering a requirement with hashes.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_NO_REQUIRE_HASHES</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-progress-bar"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-progress-bar">
+<span class="sig-name descname"><span class="pre">--progress-bar</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;progress_bar&gt;</span></span><a class="headerlink" href="#cmdoption-progress-bar" title="Link to this definition">¶</a></dt>
+<dd><p>Specify whether the progress bar should be used. In ‘auto’ mode, --quiet will suppress all progress bars. [auto, on, off, raw] (default: auto)</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_PROGRESS_BAR</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-no-build-isolation"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-no-build-isolation">
+<span class="sig-name descname"><span class="pre">--no-build-isolation</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-no-build-isolation" title="Link to this definition">¶</a></dt>
+<dd><p>Disable isolation when building a modern source distribution. Build dependencies specified by PEP 518 must be already installed if this option is used.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_NO_BUILD_ISOLATION</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-check-build-dependencies"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-check-build-dependencies">
+<span class="sig-name descname"><span class="pre">--check-build-dependencies</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-check-build-dependencies" title="Link to this definition">¶</a></dt>
+<dd><p>Check the build dependencies.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_CHECK_BUILD_DEPENDENCIES</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-ignore-requires-python"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ignore-requires-python">
+<span class="sig-name descname"><span class="pre">--ignore-requires-python</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ignore-requires-python" title="Link to this definition">¶</a></dt>
+<dd><p>Ignore the Requires-Python information.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_IGNORE_REQUIRES_PYTHON</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-dest"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-d">
+<span id="cmdoption-dest"></span><span class="sig-name descname"><span class="pre">-d</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--dest</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;dir&gt;</span></span><a class="headerlink" href="#cmdoption-d" title="Link to this definition">¶</a></dt>
+<dd><p>Download packages into &lt;dir&gt;.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_DEST</span></code>, <code class="docutils literal notranslate"><span class="pre">PIP_DESTINATION_DIR</span></code>, <code class="docutils literal notranslate"><span class="pre">PIP_DESTINATION_DIRECTORY</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-platform"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-platform">
+<span class="sig-name descname"><span class="pre">--platform</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;platform&gt;</span></span><a class="headerlink" href="#cmdoption-platform" title="Link to this definition">¶</a></dt>
+<dd><p>Only use wheels compatible with &lt;platform&gt;. Defaults to the platform of the running system. Use this option multiple times to specify multiple platforms supported by the target interpreter.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_PLATFORM</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-python-version"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-python-version">
+<span class="sig-name descname"><span class="pre">--python-version</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;python_version&gt;</span></span><a class="headerlink" href="#cmdoption-python-version" title="Link to this definition">¶</a></dt>
+<dd><p>The Python interpreter version to use for wheel and “Requires-Python”
+compatibility checks. Defaults to a version derived from the running
+interpreter. The version can be specified using up to three dot-separated
+integers (e.g. “3” for 3.0.0, “3.7” for 3.7.0, or “3.7.3”). A major-minor
+version can also be given as a string without dots (e.g. “37” for 3.7.0).</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_PYTHON_VERSION</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-implementation"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-implementation">
+<span class="sig-name descname"><span class="pre">--implementation</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;implementation&gt;</span></span><a class="headerlink" href="#cmdoption-implementation" title="Link to this definition">¶</a></dt>
+<dd><p>Only use wheels compatible with Python implementation &lt;implementation&gt;, e.g. ‘pp’, ‘jy’, ‘cp’,  or ‘ip’. If not specified, then the current interpreter implementation is used.  Use ‘py’ to force implementation-agnostic wheels.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_IMPLEMENTATION</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-abi"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-abi">
+<span class="sig-name descname"><span class="pre">--abi</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;abi&gt;</span></span><a class="headerlink" href="#cmdoption-abi" title="Link to this definition">¶</a></dt>
+<dd><p>Only use wheels compatible with Python abi &lt;abi&gt;, e.g. ‘pypy_41’. If not specified, then the current interpreter abi tag is used. Use this option multiple times to specify multiple abis supported by the target interpreter. Generally you will need to specify --implementation, --platform, and --python-version when using this option.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_ABI</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-group"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-group">
+<span class="sig-name descname"><span class="pre">--group</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;[path:]group&gt;</span></span><a class="headerlink" href="#cmdoption-group" title="Link to this definition">¶</a></dt>
+<dd><p>Install a named dependency-group from a “pyproject.toml” file. If a path is given, the name of the file must be “pyproject.toml”. Defaults to using “pyproject.toml” in the current directory.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_GROUP</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-no-clean"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-no-clean">
+<span class="sig-name descname"><span class="pre">--no-clean</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-no-clean" title="Link to this definition">¶</a></dt>
+<dd><p>Don’t clean up build directories.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_NO_CLEAN</span></code>)</p>
+</dd></dl>
+
+</p>
+<p><span class="target" id="download-index-url"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-i">
+<span id="cmdoption-index-url"></span><span class="sig-name descname"><span class="pre">-i</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--index-url</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;url&gt;</span></span><a class="headerlink" href="#cmdoption-i" title="Link to this definition">¶</a></dt>
+<dd><p>Base URL of the Python Package Index (default <a class="reference external" href="https://pypi.org/simple">https://pypi.org/simple</a>). This should point to a repository compliant with PEP 503 (the simple repository API) or a local directory laid out in the same format.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_INDEX_URL</span></code>, <code class="docutils literal notranslate"><span class="pre">PIP_PYPI_URL</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-extra-index-url"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-extra-index-url">
+<span class="sig-name descname"><span class="pre">--extra-index-url</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;url&gt;</span></span><a class="headerlink" href="#cmdoption-extra-index-url" title="Link to this definition">¶</a></dt>
+<dd><p>Extra URLs of package indexes to use in addition to --index-url. Should follow the same rules as --index-url.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_EXTRA_INDEX_URL</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-no-index"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-no-index">
+<span class="sig-name descname"><span class="pre">--no-index</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-no-index" title="Link to this definition">¶</a></dt>
+<dd><p>Ignore package index (only looking at --find-links URLs instead).</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_NO_INDEX</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-refresh-package"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-refresh-package">
+<span class="sig-name descname"><span class="pre">--refresh-package</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;refresh_package&gt;</span></span><a class="headerlink" href="#cmdoption-refresh-package" title="Link to this definition">¶</a></dt>
+<dd><p>Refresh package index information for the given packages instead of using cached responses. Accepts ‘:all:’ to apply to all packages, or a comma-separated list of package names.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_REFRESH_PACKAGE</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-find-links"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-f">
+<span id="cmdoption-find-links"></span><span class="sig-name descname"><span class="pre">-f</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--find-links</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;url&gt;</span></span><a class="headerlink" href="#cmdoption-f" title="Link to this definition">¶</a></dt>
+<dd><p>If a URL or path to an html file, then parse for links to archives such as sdist (.tar.gz) or wheel (.whl) files. If a local path or <a class="reference external" href="file://">file://</a> URL that’s a directory, then look for archives in the directory listing. Links to VCS project URLs are not supported.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_FIND_LINKS</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-uploaded-prior-to"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-uploaded-prior-to">
+<span class="sig-name descname"><span class="pre">--uploaded-prior-to</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;datetime_or_duration&gt;</span></span><a class="headerlink" href="#cmdoption-uploaded-prior-to" title="Link to this definition">¶</a></dt>
+<dd><p>Only consider packages uploaded prior to the given value. Accepts an ISO 8601 datetime (e.g., ‘2023-01-01T00:00:00Z’, uses local timezone if none specified) or a duration in days (e.g., ‘P3D’ for packages uploaded at least 3 days ago). Only effective when using indexes that provide upload-time metadata.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_UPLOADED_PRIOR_TO</span></code>)</p>
+</dd></dl>
+
+</p>
+<p><span class="target" id="download-pre"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-pre">
+<span class="sig-name descname"><span class="pre">--pre</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-pre" title="Link to this definition">¶</a></dt>
+<dd><p>Include pre-release and development versions. By default, pip only finds stable versions.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_PRE</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-all-releases"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-all-releases">
+<span class="sig-name descname"><span class="pre">--all-releases</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;release_control&gt;</span></span><a class="headerlink" href="#cmdoption-all-releases" title="Link to this definition">¶</a></dt>
+<dd><p>Allow all release types (including pre-releases) for a package. Can be supplied multiple times, and each time adds to the existing value. Accepts either “:all:” to allow pre-releases for all packages, “:none:” to empty the set (notice the colons), or one or more package names with commas between them (no colons). Cannot be used with --pre.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_ALL_RELEASES</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-only-final"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-only-final">
+<span class="sig-name descname"><span class="pre">--only-final</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;release_control&gt;</span></span><a class="headerlink" href="#cmdoption-only-final" title="Link to this definition">¶</a></dt>
+<dd><p>Only allow final releases (no pre-releases) for a package. Can be supplied multiple times, and each time adds to the existing value. Accepts either “:all:” to disable pre-releases for all packages, “:none:” to empty the set, or one or more package names with commas between them. Cannot be used with --pre.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_ONLY_FINAL</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-no-binary"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-no-binary">
+<span class="sig-name descname"><span class="pre">--no-binary</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;format_control&gt;</span></span><a class="headerlink" href="#cmdoption-no-binary" title="Link to this definition">¶</a></dt>
+<dd><p>Do not download binary packages. Cached binary packages may still be used. Can be supplied multiple times, and each time adds to the existing value. Accepts either ‘:all:’ to disable all binary packages, ‘:none:’ to empty the set (notice the colons), or one or more package names with commas between them (no colons). Note that some packages are tricky to compile and may fail to install when this option is used on them.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_NO_BINARY</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-only-binary"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-only-binary">
+<span class="sig-name descname"><span class="pre">--only-binary</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;format_control&gt;</span></span><a class="headerlink" href="#cmdoption-only-binary" title="Link to this definition">¶</a></dt>
+<dd><p>Do not use source packages. Can be supplied multiple times, and each time adds to the existing value. Accepts either “:all:” to disable all source packages, “:none:” to empty the set, or one or more package names with commas between them. Packages without binary distributions will fail to install when this option is used on them.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_ONLY_BINARY</span></code>)</p>
+</dd></dl>
+
+<span class="target" id="download-prefer-binary"></span><dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-prefer-binary">
+<span class="sig-name descname"><span class="pre">--prefer-binary</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-prefer-binary" title="Link to this definition">¶</a></dt>
+<dd><p>Prefer binary packages over source packages, even if the source packages are newer.</p>
+<p>(environment variable: <code class="docutils literal notranslate"><span class="pre">PIP_PREFER_BINARY</span></code>)</p>
+</dd></dl>
+
+</p>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h2>
+<ol class="arabic">
+<li><p>Download a package and all of its dependencies</p>
+<div class="tab-set docutils">
+<input checked="True" class="tab-input" id="tab-set--1-input--1" name="tab-set--1" type="radio" /><label class="tab-label" for="tab-set--1-input--1">Unix/macOS</label><div class="tab-content docutils">
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>download<span class="w"> </span>SomePackage
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>download<span class="w"> </span>-d<span class="w"> </span>.<span class="w"> </span>SomePackage<span class="w">  </span><span class="c1"># equivalent to above</span>
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>download<span class="w"> </span>--no-index<span class="w"> </span>--find-links<span class="o">=</span>/tmp/wheelhouse<span class="w"> </span>-d<span class="w"> </span>/tmp/otherwheelhouse<span class="w"> </span>SomePackage
+</pre></div>
+</div>
+</div>
+<input class="tab-input" id="tab-set--1-input--2" name="tab-set--1" type="radio" /><label class="tab-label" for="tab-set--1-input--2">Windows</label><div class="tab-content docutils">
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>py<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>download<span class="w"> </span>SomePackage
+py<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>download<span class="w"> </span>-d<span class="w"> </span>.<span class="w"> </span>SomePackage<span class="w">  </span><span class="c1"># equivalent to above</span>
+py<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>download<span class="w"> </span>--no-index<span class="w"> </span>--find-links<span class="o">=</span>/tmp/wheelhouse<span class="w"> </span>-d<span class="w"> </span>/tmp/otherwheelhouse<span class="w"> </span>SomePackage
+</pre></div>
+</div>
+</div>
+</div>
+</li>
+<li><p>Download a package and all of its dependencies with OSX specific interpreter constraints.
+This forces OSX 10.10 or lower compatibility. Since OSX deps are forward compatible,
+this will also match <code class="docutils literal notranslate"><span class="pre">macosx_10_9_x86_64</span></code>, <code class="docutils literal notranslate"><span class="pre">macosx_10_8_x86_64</span></code>, <code class="docutils literal notranslate"><span class="pre">macosx_10_8_intel</span></code>,
+etc.
+It will also match deps with platform <code class="docutils literal notranslate"><span class="pre">any</span></code>. Also force the interpreter version to <code class="docutils literal notranslate"><span class="pre">27</span></code>
+(or more generic, i.e. <code class="docutils literal notranslate"><span class="pre">2</span></code>) and implementation to <code class="docutils literal notranslate"><span class="pre">cp</span></code> (or more generic, i.e. <code class="docutils literal notranslate"><span class="pre">py</span></code>).</p>
+<div class="tab-set docutils">
+<input checked="True" class="tab-input" id="tab-set--2-input--1" name="tab-set--2" type="radio" /><label class="tab-label" for="tab-set--2-input--1">Unix/macOS</label><div class="tab-content docutils">
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>download<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--only-binary<span class="o">=</span>:all:<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--platform<span class="w"> </span>macosx_10_10_x86_64<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--python-version<span class="w"> </span><span class="m">27</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--implementation<span class="w"> </span>cp<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>SomePackage
+</pre></div>
+</div>
+</div>
+<input class="tab-input" id="tab-set--2-input--2" name="tab-set--2" type="radio" /><label class="tab-label" for="tab-set--2-input--2">Windows</label><div class="tab-content docutils">
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>py<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>download<span class="w"> </span>^
+<span class="w">   </span>--only-binary<span class="o">=</span>:all:<span class="w"> </span>^
+<span class="w">   </span>--platform<span class="w"> </span>macosx_10_10_x86_64<span class="w"> </span>^
+<span class="w">   </span>--python-version<span class="w"> </span><span class="m">27</span><span class="w"> </span>^
+<span class="w">   </span>--implementation<span class="w"> </span>cp<span class="w"> </span>^
+<span class="w">   </span>SomePackage
+</pre></div>
+</div>
+</div>
+</div>
+</li>
+<li><p>Download a package and its dependencies with linux specific constraints.
+Force the interpreter to be any minor version of py3k, and only accept
+<code class="docutils literal notranslate"><span class="pre">cp34m</span></code> or <code class="docutils literal notranslate"><span class="pre">none</span></code> as the abi.</p>
+<div class="tab-set docutils">
+<input checked="True" class="tab-input" id="tab-set--3-input--1" name="tab-set--3" type="radio" /><label class="tab-label" for="tab-set--3-input--1">Unix/macOS</label><div class="tab-content docutils">
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>download<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--only-binary<span class="o">=</span>:all:<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--platform<span class="w"> </span>linux_x86_64<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--python-version<span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--implementation<span class="w"> </span>cp<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--abi<span class="w"> </span>cp34m<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>SomePackage
+</pre></div>
+</div>
+</div>
+<input class="tab-input" id="tab-set--3-input--2" name="tab-set--3" type="radio" /><label class="tab-label" for="tab-set--3-input--2">Windows</label><div class="tab-content docutils">
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>py<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>download<span class="w"> </span>^
+<span class="w">   </span>--only-binary<span class="o">=</span>:all:<span class="w"> </span>^
+<span class="w">   </span>--platform<span class="w"> </span>linux_x86_64<span class="w"> </span>^
+<span class="w">   </span>--python-version<span class="w"> </span><span class="m">3</span><span class="w"> </span>^
+<span class="w">   </span>--implementation<span class="w"> </span>cp<span class="w"> </span>^
+<span class="w">   </span>--abi<span class="w"> </span>cp34m<span class="w"> </span>^
+<span class="w">   </span>SomePackage
+</pre></div>
+</div>
+</div>
+</div>
+</li>
+<li><p>Force platform, implementation, and abi agnostic deps.</p>
+<div class="tab-set docutils">
+<input checked="True" class="tab-input" id="tab-set--4-input--1" name="tab-set--4" type="radio" /><label class="tab-label" for="tab-set--4-input--1">Unix/macOS</label><div class="tab-content docutils">
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>download<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--only-binary<span class="o">=</span>:all:<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--platform<span class="w"> </span>any<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--python-version<span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--implementation<span class="w"> </span>py<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--abi<span class="w"> </span>none<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>SomePackage
+</pre></div>
+</div>
+</div>
+<input class="tab-input" id="tab-set--4-input--2" name="tab-set--4" type="radio" /><label class="tab-label" for="tab-set--4-input--2">Windows</label><div class="tab-content docutils">
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>py<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>download<span class="w"> </span>^
+<span class="w">   </span>--only-binary<span class="o">=</span>:all:<span class="w"> </span>^
+<span class="w">   </span>--platform<span class="w"> </span>any<span class="w"> </span>^
+<span class="w">   </span>--python-version<span class="w"> </span><span class="m">3</span><span class="w"> </span>^
+<span class="w">   </span>--implementation<span class="w"> </span>py<span class="w"> </span>^
+<span class="w">   </span>--abi<span class="w"> </span>none<span class="w"> </span>^
+<span class="w">   </span>SomePackage
+</pre></div>
+</div>
+</div>
+</div>
+</li>
+<li><p>Even when overconstrained, this will still correctly fetch the pip universal wheel.</p>
+<div class="tab-set docutils">
+<input checked="True" class="tab-input" id="tab-set--5-input--1" name="tab-set--5" type="radio" /><label class="tab-label" for="tab-set--5-input--1">Unix/macOS</label><div class="tab-content docutils">
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>download<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--only-binary<span class="o">=</span>:all:<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--platform<span class="w"> </span>linux_x86_64<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--python-version<span class="w"> </span><span class="m">33</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--implementation<span class="w"> </span>cp<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--abi<span class="w"> </span>cp34m<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>pip&gt;<span class="o">=</span><span class="m">8</span>
+</pre></div>
+</div>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>ls<span class="w"> </span>pip-8.1.1-py2.py3-none-any.whl
+<span class="go">pip-8.1.1-py2.py3-none-any.whl</span>
+</pre></div>
+</div>
+</div>
+<input class="tab-input" id="tab-set--5-input--2" name="tab-set--5" type="radio" /><label class="tab-label" for="tab-set--5-input--2">Windows</label><div class="tab-content docutils">
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">C:\&gt; py -m pip download ^</span>
+<span class="go">   --only-binary=:all: ^</span>
+<span class="go">   --platform linux_x86_64 ^</span>
+<span class="go">   --python-version 33 ^</span>
+<span class="go">   --implementation cp ^</span>
+<span class="go">   --abi cp34m ^</span>
+<span class="go">   pip&gt;=8</span>
+</pre></div>
+</div>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">C:\&gt; dir pip-8.1.1-py2.py3-none-any.whl</span>
+<span class="go">pip-8.1.1-py2.py3-none-any.whl</span>
+</pre></div>
+</div>
+</div>
+</div>
+</li>
+<li><p>Download a package supporting one of several ABIs and platforms.
+This is useful when fetching wheels for a well-defined interpreter, whose
+supported ABIs and platforms are known and fixed, different than the one pip is
+running under.</p>
+<div class="tab-set docutils">
+<input checked="True" class="tab-input" id="tab-set--6-input--1" name="tab-set--6" type="radio" /><label class="tab-label" for="tab-set--6-input--1">Unix/macOS</label><div class="tab-content docutils">
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>download<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--only-binary<span class="o">=</span>:all:<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--platform<span class="w"> </span>manylinux1_x86_64<span class="w"> </span>--platform<span class="w"> </span>linux_x86_64<span class="w"> </span>--platform<span class="w"> </span>any<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--python-version<span class="w"> </span><span class="m">36</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--implementation<span class="w"> </span>cp<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--abi<span class="w"> </span>cp36m<span class="w"> </span>--abi<span class="w"> </span>cp36<span class="w"> </span>--abi<span class="w"> </span>abi3<span class="w"> </span>--abi<span class="w"> </span>none<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>SomePackage
+</pre></div>
+</div>
+</div>
+<input class="tab-input" id="tab-set--6-input--2" name="tab-set--6" type="radio" /><label class="tab-label" for="tab-set--6-input--2">Windows</label><div class="tab-content docutils">
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">C:&gt; py -m pip download ^</span>
+<span class="go">   --only-binary=:all: ^</span>
+<span class="go">   --platform manylinux1_x86_64 --platform linux_x86_64 --platform any ^</span>
+<span class="go">   --python-version 36 ^</span>
+<span class="go">   --implementation cp ^</span>
+<span class="go">   --abi cp36m --abi cp36 --abi abi3 --abi none ^</span>
+<span class="go">   SomePackage</span>
+</pre></div>
+</div>
+</div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="../pip_wheel/">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">pip wheel</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="../pip_lock/">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">pip lock</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                <a href="../../copyright/">Copyright</a> &#169; The pip developers
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">pip download</a><ul>
+<li><a class="reference internal" href="#usage">Usage</a></li>
+<li><a class="reference internal" href="#description">Description</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#options">Options</a></li>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../../_static/documentation_options.js?v=87e95a9c"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=80126f2a"></script>
+    <script src="../../_static/tabs.js?v=3ee01567"></script>
+    </body>
+</html>
