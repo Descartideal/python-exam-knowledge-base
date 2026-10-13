@@ -55,7 +55,8 @@ def collect():
     paths=[]
     for p in ROOT.iterdir():
         if p.is_dir() and re.match(r'^(0[0-9]|1[0-2])-',p.name):
-            paths += [x for x in p.rglob('*') if x.is_file() and x.suffix.lower() in {'.md','.py','.txt'}]
+            paths += [x for x in p.rglob('*') if x.is_file() and x.suffix.lower() in {'.md','.py','.txt'}
+                      and 'AI上传' not in x.relative_to(p).parts]
         elif p.is_dir() and p.name=='14-来源资料':
             paths += [x for x in p.glob('官方资料目录.md') if x.is_file()]
             paths += list((p/'官方资料').glob('*.html'))

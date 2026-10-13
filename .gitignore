@@ -15,6 +15,12 @@ __pycache__/
 Thumbs.db
 Desktop.ini
 
+# 本地 AI 助手索引、对话、运行日志和用户数据
+.local-assistant/
+13-运行结果/AI助手/
+10-测试数据/AI上传/
+*.gguf
+
 # 原始分享页面的内部数据；学习备份和官方资料保留
 14-来源资料/share-decoded.json
 14-来源资料/share-source.html.txt

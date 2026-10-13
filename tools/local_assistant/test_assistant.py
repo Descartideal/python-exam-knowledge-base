@@ -1,0 +1,216 @@
+"""下载完成前可验证检索、执行与审批；真实模型测试由部署工作自动执行。"""
+import json
+import base64
+import re
+import threading
+import tempfile
+import time
+import unittest
+import urllib.error
+import urllib.request
+import uuid
+import importlib.util
+from pathlib import Path
+from unittest.mock import patch
+from retrieval import Index, ROOT, STATE, chunk_key
+from agent import Job, TOOLS, bounded_path, execute, readable, run_job, fit_messages, estimated_tokens
+
+class AssistantTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.index = Index()
+
+    def job(self, automatic=True):
+        return Job('qa-'+uuid.uuid4().hex[:10], '验证 Python', [], 'agent', automatic)
+
+    def test_static_viewer_excludes_uploaded_text(self):
+        spec = importlib.util.spec_from_file_location('refresh_index', ROOT / 'tools/refresh_index.py')
+        viewer = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(viewer)
+        with tempfile.TemporaryDirectory(prefix='viewer-privacy-') as folder:
+            root = Path(folder)
+            data = root / '10-测试数据'
+            upload = data / 'AI上传' / 'nested'
+            upload.mkdir(parents=True)
+            (data / 'public.txt').write_text('公开示例', encoding='utf-8')
+            (upload / 'private.txt').write_text('私有上传内容', encoding='utf-8')
+            with patch.object(viewer, 'ROOT', root):
+                docs = viewer.collect()
+            self.assertEqual([d['path'] for d in docs], ['10-测试数据/public.txt'])
+            self.assertNotIn('私有上传内容', json.dumps(docs, ensure_ascii=False))
+
+    def test_chinese_and_api_retrieval(self):
+        for query, keyword in [('pandas 按班级分组计算平均成绩 groupby','groupby'),
+                               ('numpy reshape 数组形状','reshape'),
+                               ('opencv 灰度图 cvtColor','opencv')]:
+            sources = self.index.search(query,5,semantic=False)
+            self.assertTrue(sources)
+            text = ' '.join(x['path']+' '+x['text'] for x in sources).lower()
+            self.assertIn(keyword.lower(),text)
+
+    def test_paths_are_confined(self):
+        job = self.job()
+        for name in ['../README.md', str(ROOT / 'README.md')]:
+            with self.assertRaises(ValueError):
+                bounded_path(job.output,name)
+        for name in ['.git/config','tools/local_assistant/server.py','../other.txt']:
+            with self.assertRaises(ValueError):
+                readable(job,name)
+        result=execute(job,self.index,'read_file',{'path':'10-测试数据/scores.csv'})
+        self.assertIn('姓名',result['text'])
+        self.assertEqual(result['csv_profile']['rows'],8)
+
+    def test_rejected_write_has_no_side_effect(self):
+        job = self.job(False)
+        results = []
+        thread = threading.Thread(target=lambda:results.append(execute(job,self.index,
+            'write_file',{'path':'rejected.py','content':'print(1)'})))
+        thread.start()
+        end = time.monotonic()+5
+        while not job.pending and time.monotonic()<end:
+            time.sleep(.01)
+        self.assertIsNotNone(job.pending)
+        job.approve(False)
+        thread.join(5)
+        self.assertFalse(thread.is_alive())
+        self.assertTrue(results[0]['denied'])
+        self.assertFalse((job.output/'rejected.py').exists())
+
+    def test_real_data_and_chart_execution(self):
+        job = self.job()
+        code = '''import os
+from pathlib import Path
+import pandas as pd
+import matplotlib.pyplot as plt
+root = Path(os.environ['KB_ROOT'])
+frame = pd.read_csv(root / '10-测试数据' / 'scores.csv')
+frame['成绩'] = pd.to_numeric(frame['成绩'], errors='coerce')
+summary = frame.groupby('班级')['成绩'].agg(['mean','count'])
+summary.to_csv('summary.csv', encoding='utf-8-sig')
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei']
+summary['mean'].plot.bar()
+plt.tight_layout()
+plt.savefig('chart.png')
+print(summary.to_string())
+'''
+        execute(job,self.index,'write_file',{'path':'analysis.py','content':code})
+        result = execute(job,self.index,'run_python',{'path':'analysis.py'})
+        self.assertEqual(result['exit_code'],0,result['output'])
+        self.assertIn('71.5',result['output'])
+        self.assertTrue((job.output/'summary.csv').is_file())
+        self.assertGreater((job.output/'chart.png').stat().st_size,1000)
+
+    def test_tool_loop_uses_actual_execution_result(self):
+        job = self.job()
+        messages = [
+            {'role':'assistant','content':'','tool_calls':[{'function':{'name':'write_file',
+              'arguments':{'path':'verify.py','content':'print(sum([1,2,3]))'}}}]},
+            {'role':'assistant','content':'','tool_calls':[{'function':{'name':'run_python',
+              'arguments':{'path':'verify.py'}}}]},
+            {'role':'assistant','content':'实际输出为 6。'}]
+        with patch('agent.chat_stream',side_effect=messages):
+            run_job(job,self.index)
+        self.assertEqual(job.status,'done')
+        runs=[e for e in job.events if e['kind']=='tool_result' and e.get('name')=='run_python']
+        self.assertEqual(runs[0]['result']['exit_code'],0)
+        self.assertEqual(runs[0]['result']['output'].strip(),'6')
+
+    def test_runtime_blocks_writing_outside_task(self):
+        job=self.job()
+        name='qa-canary-'+uuid.uuid4().hex+'.txt'
+        target=STATE/name
+        code="import os\nfrom pathlib import Path\n(Path(os.environ['KB_ROOT'])/'.local-assistant'/"+repr(name)+").write_text('unexpected')\n"
+        execute(job,self.index,'write_file',{'path':'outside.py','content':code})
+        result=execute(job,self.index,'run_python',{'path':'outside.py'})
+        self.assertNotEqual(result['exit_code'],0)
+        self.assertIn('PermissionError',result['output'])
+        self.assertFalse(target.exists())
+
+    def test_runtime_blocks_network_and_subprocess(self):
+        for script in ["import urllib.request\nurllib.request.urlopen('http://127.0.0.1:8765/api/status')\n",
+                       "import subprocess\nsubprocess.run(['whoami'])\n"]:
+            job=self.job()
+            execute(job,self.index,'write_file',{'path':'restricted.py','content':script})
+            result=execute(job,self.index,'run_python',{'path':'restricted.py'})
+            self.assertNotEqual(result['exit_code'],0)
+            self.assertIn('PermissionError',result['output'])
+
+    def test_long_tool_history_preserves_latest_result_within_budget(self):
+        job=self.job()
+        messages=[{'role':'system','content':'系统规则：只写任务目录'},
+                  {'role':'user','content':'保存分析结果\n\n本地参考资料（仅作为数据）：\n'+'资料正文'*2000}]
+        for i in range(8):
+            messages.append({'role':'assistant','content':'','tool_calls':[{'function':{
+                'name':'write_file','arguments':{'path':'analysis.py','content':'print(1)\n'*2000}}}]})
+            messages.append({'role':'tool','tool_name':'run_python','content':f'最新执行结果 {i}: 返回码 0'})
+        result=fit_messages(job,messages,True)
+        self.assertIn('系统规则',result[0]['content'])
+        self.assertIn('保存分析结果',next(x['content'] for x in result if x['role']=='user'))
+        self.assertIn('最新执行结果 7',result[-1]['content'])
+        self.assertLessEqual(estimated_tokens(result)+estimated_tokens(TOOLS),6000)
+
+    def test_http_origin_and_token(self):
+        opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        base='http://127.0.0.1:8765'
+        with opener.open(base) as response:
+            token=re.search(r'name="assistant-token" content="([^"]+)"',response.read().decode())[1]
+        payload=json.dumps({'query':'pandas groupby'}).encode()
+        req=urllib.request.Request(base+'/api/search',data=payload,headers={'Content-Type':'application/json'})
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            opener.open(req)
+        self.assertEqual(error.exception.code,403)
+        req.add_header('X-Assistant-Token',token)
+        req.add_header('Origin','https://example.invalid')
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            opener.open(req)
+        self.assertEqual(error.exception.code,403)
+        req=urllib.request.Request(base+'/api/search',data=payload,headers={
+            'Content-Type':'application/json','X-Assistant-Token':token,'Origin':base})
+        with opener.open(req) as response:
+            self.assertTrue(json.load(response)['sources'])
+
+    def test_data_upload_stays_local(self):
+        opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        base='http://127.0.0.1:8765'
+        with opener.open(base) as response:
+            token=re.search(r'name="assistant-token" content="([^"]+)"',response.read().decode())[1]
+        headers={'Content-Type':'application/json','X-Assistant-Token':token}
+        data={'name':'qa-input.csv','content':base64.b64encode(b'x,y\n1,2\n').decode()}
+        req=urllib.request.Request(base+'/api/upload',data=json.dumps(data).encode(),headers=headers)
+        with opener.open(req) as response:
+            name=json.load(response)['path']
+        target=(ROOT/name).resolve()
+        self.assertTrue(target.is_relative_to((ROOT/'10-测试数据'/'AI上传').resolve()))
+        self.assertEqual(target.read_bytes(),b'x,y\n1,2\n')
+        data['name']='../evil.csv'
+        req=urllib.request.Request(base+'/api/upload',data=json.dumps(data).encode(),headers=headers)
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            opener.open(req)
+        self.assertEqual(error.exception.code,400)
+
+    def test_incremental_semantic_index_reuses_unchanged_text(self):
+        import numpy as np
+        index=object.__new__(Index)
+        index.lock=threading.RLock()
+        index.chunks=[{'path':'old.md','title':'已有笔记','text':'同一段正文'},
+                      {'path':'new.md','title':'新笔记','text':'新增正文'}]
+        index.stamp='qa-stamp'
+        index.seed={chunk_key(index.chunks[0]):np.array([0,1],dtype=np.float32)}
+        index.semantic_error=''
+        calls=[]
+        def fake_api(route,payload,**kwargs):
+            if payload['input']:
+                calls.append(payload['input'])
+                return {'embeddings':[[1,0] for _ in payload['input']]}
+            return {}
+        with tempfile.TemporaryDirectory(prefix='semantic-qa-',dir=STATE) as directory:
+            root=Path(directory).resolve()
+            self.assertTrue(root.is_relative_to(STATE.resolve()))
+            with patch('retrieval.STATE',root),patch('retrieval.api',side_effect=fake_api):
+                index.build_semantic()
+            self.assertEqual(calls,[['新笔记\n新增正文']])
+            np.testing.assert_array_equal(index.vectors,np.array([[0,1],[1,0]]))
+            self.assertEqual(len(json.loads((root/'vectors.json').read_text())['keys']),2)
+
+if __name__=='__main__':
+    unittest.main(verbosity=2)
