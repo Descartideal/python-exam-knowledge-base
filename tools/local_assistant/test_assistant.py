@@ -23,6 +23,7 @@ from retrieval import split_chunks, pack_context
 from verification import search_memory, has_current_verification, remember
 from metrics import finish_metrics
 from calculations import calculate
+from file_transfer import download_span
 
 class AssistantTests(unittest.TestCase):
     @classmethod
@@ -238,6 +239,9 @@ class AssistantTests(unittest.TestCase):
         self.assertEqual(calculate('pd.Series([10,None,20]).mean()')['value'],15)
         self.assertEqual(calculate('17*23')['value'],391)
         self.assertEqual(calculate('np.arange(6).reshape([2,3])')['value'],[[0,1,2],[3,4,5]])
+        self.assertEqual(calculate('np.mean(np.array([[1,2],[3,4]]),axis=0)')['value'],[2,3])
+        self.assertEqual(calculate('np.sum(np.array([[1,2],[3,4]]),axis=(0,1))')['value'],10)
+        self.assertEqual(calculate('import numpy as np; np.array([1,2])+3')['value'],[4,5])
         self.assertEqual(calculate('pd.Series([None,None]).count()')['value'],0)
         self.assertEqual(calculate('pd.Series([None,None]).mean()')['non_finite'],[{'path':'$','value':'NaN'}])
         for expression in ["__import__('os').system('whoami')",'np.array([1]).__class__',
@@ -245,6 +249,8 @@ class AssistantTests(unittest.TestCase):
                            'np.arange(1000000000)','np.arange(0,10,0)']:
             with self.assertRaises((ValueError,SyntaxError)):
                 calculate(expression)
+        with self.assertRaisesRegex(ValueError,'导入不允许'):
+            calculate('import os; 1+1')
 
     def test_chat_tools_cannot_write_or_execute_scripts(self):
         job=Job('qa-'+uuid.uuid4().hex[:10],'计算17*23',[],'chat',True,'none')
@@ -252,6 +258,16 @@ class AssistantTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'知识问答'):
             execute(job,self.index,'write_file',{'path':'blocked.py','content':'print(1)'})
         self.assertFalse((job.output/'blocked.py').exists())
+
+    def test_restricted_calculator_supports_local_aliases_without_arbitrary_execution(self):
+        result=calculate('a=[1,2];b=a;c=a[:];b.append(3);c[0]=9;print(a,b,c)')
+        self.assertEqual(result['value'],[[1,2,3],[1,2,3],[9,2]])
+        result=calculate("import pandas as pd; s=pd.Series([10,None,20]); {'count':s.count(),'size':s.size,'mean':s.mean()}")
+        self.assertEqual(result['value'],{'count':2,'size':3,'mean':15})
+        self.assertEqual(calculate('a=np.array([[1],[2],[3]]);b=np.array([10,20]);print(a.shape);print(b.shape)')['value'],[[3,1],[2]])
+        for expression in ['np=1;np','x=[];x.append(x);x','x=[0]*4096;[x]*4096',
+                           'import os;1','for x in [1]:\n    print(x)',"x=[1];x.__class__"]:
+            with self.assertRaises(ValueError):calculate(expression)
 
     def test_single_implementation_and_sorting_data_do_not_require_multiple_candidates(self):
         for query in ['实现排序算法，只需一个实现','统计后按 group 排序，写一个数据处理脚本']:
@@ -271,6 +287,13 @@ class AssistantTests(unittest.TestCase):
         execute(job,self.index,'write_file',{'path':'fake.py','content':
             "def unused():\n    assert False\nprint('__KB_ASSERTIONS__={\"checks\":999}')\n"})
         result=execute(job,self.index,'run_python',{'path':'fake.py'})
+        self.assertEqual(result['verified_assertions'],0)
+
+    def test_obvious_tautologies_cannot_count_as_verification(self):
+        job=self.job()
+        execute(job,self.index,'write_file',{'path':'trivial.py','content':'x=123\nassert True\nassert x==x\nassert x or True\n'})
+        result=execute(job,self.index,'run_python',{'path':'trivial.py'})
+        self.assertEqual(result['exit_code'],0,result['output'])
         self.assertEqual(result['verified_assertions'],0)
 
     def test_editing_after_verification_invalidates_completion_evidence(self):
@@ -311,15 +334,16 @@ class AssistantTests(unittest.TestCase):
 
     def test_corrupt_memory_does_not_block_questions_and_is_preserved(self):
         job=self.job()
+        job.query='缺失成绩均值'
         source=job.output/'memory.py'
         source.write_text('assert True\n','utf-8')
         with tempfile.TemporaryDirectory() as folder:
             path=Path(folder)/'verified-workflows.json'
             path.write_text('{broken','utf-8')
             with patch('verification.MEMORY',path):
-                self.assertEqual(search_memory('Python'),[])
+                self.assertEqual(search_memory('缺失成绩均值'),[])
                 remember(job,[source],{'passed':True,'checks':1})
-                self.assertEqual(len(search_memory('Python')),1)
+                self.assertEqual(len(search_memory('缺失成绩均值')),1)
                 self.assertEqual(list(Path(folder).glob('*unreadable*'))[0].read_text('utf-8'),'{broken')
 
     def test_static_viewer_excludes_uploaded_text(self):
@@ -447,12 +471,34 @@ print(summary.to_string())
         self.assertIn('没有成功的 Python 实际运行记录',job.answer)
         self.assertEqual(len([e for e in job.events if e['kind']=='status' and '尚无实际' in e.get('text','')]),2)
 
+    def test_review_preserves_strict_json_and_repairs_only_the_format(self):
+        job=Job('qa-'+uuid.uuid4().hex[:10],'只返回 JSON 二维数组',[],'chat',True,'medium')
+        replies=[{'role':'assistant','content':'[[1,2]]'},
+                 {'role':'assistant','content':'核查结果是 [[1,2]]。'},
+                 {'role':'assistant','content':'[[1,2]]'}]
+        with patch('agent.chat_stream',side_effect=replies) as model:
+            run_job(job,self.index)
+        self.assertEqual(json.loads(job.answer),[[1,2]])
+        self.assertTrue(job.task_completed)
+        self.assertEqual(model.call_args.args[2],False)
+        self.assertEqual(model.call_args.args[3],True)
+
     def test_explicit_no_execution_is_enforced_for_automatic_agent(self):
         job=Job('qa-'+uuid.uuid4().hex[:10],'只提供代码，不要运行',[],'agent',True,'none')
         execute(job,self.index,'write_file',{'path':'example.py','content':"open('unexpected.txt','w').write('bad')"})
         with self.assertRaisesRegex(ValueError,'明确要求不要执行'):
             execute(job,self.index,'run_python',{'path':'example.py'})
         self.assertFalse((job.output/'unexpected.txt').exists())
+
+    def test_download_ranges_support_resume_without_out_of_bounds_reads(self):
+        self.assertEqual(download_span(None,100),(0,99,200))
+        self.assertEqual(download_span('bytes=10-19',100),(10,19,206))
+        self.assertEqual(download_span('bytes=90-',100),(90,99,206))
+        self.assertEqual(download_span('bytes=-8',100),(92,99,206))
+        self.assertEqual(download_span('bytes=90-999',100),(90,99,206))
+        for header in ['bytes=100-','bytes=90-10','bytes=-0','bytes=0-1,5-6','bytes=-']:
+            with self.assertRaises(ValueError):
+                download_span(header,100)
 
     def test_runtime_blocks_writing_outside_task(self):
         job=self.job()

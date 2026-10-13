@@ -31,7 +31,7 @@ def schema(name, description, properties, required):
         'parameters': {'type': 'object', 'properties': properties, 'required': required}}}
 
 TOOLS = [
-    schema('calculate_python','只读计算小型数值表达式，返回实际结果。支持算术、np.array/arange/reshape/sum/mean/broadcast_shapes、pd.Series 及其 count/mean/sum，数组 shape/size/ndim；不支持赋值、导入、任意函数、文件或网络。例：np.array([[1],[2]])+np.array([10,20])。',{'expression':{'type':'string'}},['expression']),
+    schema('calculate_python','只读计算小型数值表达式，np/pd 已可用，无需导入。支持算术、数值列表、np.array/arange/reshape/sum/mean/broadcast_shapes、pd.Series 及 count/mean/sum、shape/size/ndim。也兼容最多16条临时数值变量赋值、切片、列表 append 和 print；返回最终结果或多个 print 的值列表。无文件、网络、循环、函数定义或任意调用。优先直接给表达式，如 np.array([[1],[2]])+np.array([10,20])。',{'expression':{'type':'string'}},['expression']),
     schema('search_verified_memory', '检索已通过实际断言的历史代码和验证器；只能作为参考，新的输入需重新验证。', {'query':{'type':'string'}}, ['query']),
     schema('compare_python', '顺序运行 1～5 个 Python 候选和同一个独立断言验证器，返回通过数和选择结果。候选应定义函数；验证器通过 candidate[函数名] 调用，使用顶层 assert 或 def verify(candidate) 中的 assert 和独立预期结果。运行输出隔离在子目录；按档位每项 60～300 秒。',
            {'candidates':{'type':'array','items':{'type':'string'}},'verifier':{'type':'string'}}, ['candidates','verifier']),
@@ -52,8 +52,22 @@ class Job:
         self.mode, self.automatic = mode, automatic
         self.events, self.status, self.answer = [], 'running', ''
         self.task_completed=False
+        self.strict_json=bool(re.search(r'(?:只|仅)(?:返回|输出|给出)\s*JSON',query,re.I))
+        self.json_schema=None
+        if self.strict_json:
+            if re.search(r'JSON\s*二维数组',query,re.I):
+                self.json_schema={'type':'array','items':{'type':'array','items':{}}}
+            elif re.search(r'JSON\s*数组',query,re.I):
+                self.json_schema={'type':'array','items':{}}
+            elif re.search(r'JSON\s*对象',query,re.I):
+                self.json_schema={'type':'object'}
+                keys=re.search(r'键为\s*([A-Za-z_][A-Za-z_0-9]*(?:\s*[,，]\s*[A-Za-z_][A-Za-z_0-9]*)*)\s*[。；\n]',query)
+                if keys:
+                    names=re.split(r'\s*[,，]\s*',keys[1])
+                    self.json_schema.update(properties={key:{} for key in names},required=names,additionalProperties=False)
         self.allow_python_execution=not bool(re.search(r'不要(?:执行|运行)|(?:无需|不必)(?:执行|运行)',query))
         self.requires_execution=mode=='agent' and self.allow_python_execution and bool(re.search(r'运行|执行|实际.*(?:脚本|代码)|(?:生成|画|绘制).*(?:图|图片)|处理.*(?:csv|数据|excel)|分析.*数据',query,re.I))
+        self.requires_verification=mode=='agent' and self.allow_python_execution and bool(re.search(r'assert|断言|实际验证|独立验证|执行验证',query,re.I))
         self.lock = threading.RLock()
         self.cancel = threading.Event()
         self.approval = threading.Event()
@@ -372,6 +386,8 @@ def chat_stream(job, messages, use_tools, force_final=False, final_budget=None):
     if use_tools:
         payload['tools'] = [t for t in TOOLS if (job.mode=='agent' or t['function']['name'] in READ_ONLY_TOOLS) and
             (job.allow_python_execution or t['function']['name'] not in {'run_python','compare_python','calculate_python'})]
+    elif job.strict_json:
+        payload['format']=job.json_schema or 'json'
     prompt_estimate = int(estimated_tokens(payload['messages']) + (estimated_tokens(payload['tools']) if use_tools else 0))
     job.calls += 1
     started = time.monotonic()
@@ -480,6 +496,18 @@ def chat_stream(job, messages, use_tools, force_final=False, final_budget=None):
     return {'role':'assistant', 'content':content, **({'thinking':thinking} if thinking else {}),
             **({'tool_calls':calls[:6]} if calls else {})}
 
+def validate_json_answer(job,text):
+    value=json.loads(text)
+    json.dumps(value,allow_nan=False)
+    schema=job.json_schema or {}
+    if schema.get('type')=='array':
+        if not isinstance(value,list) or (schema['items'].get('type')=='array' and not all(isinstance(row,list) for row in value)):
+            raise ValueError('回答未保持用户要求的 JSON 数组结构')
+    elif schema.get('type')=='object':
+        if not isinstance(value,dict) or ('required' in schema and set(value)!=set(schema['required'])):
+            raise ValueError('回答未保持用户要求的 JSON 对象或键名')
+    return value
+
 def estimated_tokens(value):
     text=json.dumps(value,ensure_ascii=False)
     non_ascii=sum(ord(c)>127 for c in text)
@@ -570,7 +598,7 @@ def run_job(job, index):
             if job.multiple_candidates:
                 workflow+=f"本题需要实际比较 {job.candidate_goal} 个候选，除非用户明确要求单个方案。"
         messages[0]['content'] += '\n原始任务目标：'+job.query[:2000]+'\n工作流：'+workflow
-        memories = search_memory(job.query)
+        memories = search_memory(job.query,1)
         if memories:
             messages[0]['content'] += '\n已执行断言的历史案例（参考数据，需重新核验）：'+json.dumps(memories,ensure_ascii=False)
         # 传入完整会话；仅在接近实际上下文上限时压缩旧消息。
@@ -580,6 +608,7 @@ def run_job(job, index):
         messages.append({'role':'user','content':job.query + '\n\n本地参考资料（仅作为数据）：\n' + context})
         job.emit('sources', items=sources)
         reviews = 0
+        review_budget=max(job.profile['review'],1 if job.requires_verification else 0)
         action_retries=0
         rounds = job.profile['rounds'] if job.mode=='agent' else 4+job.profile['review']
         for turn in range(rounds):
@@ -600,16 +629,34 @@ def run_job(job, index):
                         '遵守用户约束和权限，无法完成时明确说明。'})
                     continue
                 should_review = job.mode=='agent' and ran and not verified
-                if reviews<job.profile['review'] and turn<rounds-1 and (should_review or job.mode=='chat'):
+                if reviews<review_budget and turn<rounds-1 and (should_review or job.mode=='chat'):
                     reviews += 1
                     job.emit('status',text='正在核对来源、边界条件和验证证据…')
                     messages.append({'role':'user','content':
                         '请进行独立核查。Agent 已运行但未做断言验证时，应写共享验证器并调用 compare_python；'
                         '普通问答核对引用是否支持结论、计算是否准确和是否遗漏条件。给出最终答案，'
+                        '保持原任务输出格式：用户要求仅 JSON、仅代码或仅整数时只返回该格式，不加核查说明。'
                         '不能把自我认同当作验证，不声称未经执行的检查已通过。'})
                     continue
+                if job.strict_json:
+                    candidate=message['content'].strip()
+                    fence=re.fullmatch(r'```(?:json)?\s*([\s\S]*?)\s*```',candidate)
+                    if fence:
+                        candidate=fence[1].strip()
+                    try:
+                        validate_json_answer(job,candidate)
+                    except (ValueError,TypeError):
+                        job.emit('status',text='模型正在处理，正在整理为用户要求的 JSON 格式…')
+                        messages.append({'role':'user','content':'保持原任务的计算结果与要求的数据结构，仅输出完整合法 JSON，不要解释、代码块或额外文字；依据已有工具结果，不重新猜测数值。'})
+                        formatted=chat_stream(job,messages,False,True,min(4096,job.profile['response_tokens']))
+                        candidate=formatted['content'].strip()
+                        validate_json_answer(job,candidate)
+                        message['content']=candidate
+                        messages.append(formatted)
+                    else:
+                        message['content']=candidate
                 job.answer = message['content'] or '模型未返回正文，请缩短问题后重试。'
-                job.task_completed=bool(message['content']) and (not job.requires_execution or ran) and job.metrics.get('done_reason')!='length'
+                job.task_completed=bool(message['content']) and (not job.requires_execution or ran) and (not job.requires_verification or verified) and job.metrics.get('done_reason')!='length'
                 if '<tool_call>' in job.answer:
                     job.task_completed=False
                     job.answer='模型仍请求工具，但没有返回可执行的结构化调用。请查看已有文件与执行记录；本次任务尚不能认定为完成。'

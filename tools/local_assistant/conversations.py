@@ -35,10 +35,12 @@ class ConversationStore:
                 self.save({'id':ident,'messages':[
                     {'role':'user','content':record['question']},
                     {'role':'assistant','content':record.get('answer',''),
+                     'job_id':source.stem,'status':record.get('status','done'),
+                     'task_completed':record.get('task_completed'),
                      'sources':record.get('sources',[]), 'files':record.get('files',[]),
                      'metrics':record.get('metrics',{}), 'events':[
                          e for e in record.get('events',[]) if e['kind'] in {'tool_start','tool_result'}]}],
-                    'metadata':{'mode':record.get('mode','chat')}})
+                    'metadata':{'mode':record.get('mode','chat'),'effort':record.get('effort','medium')}})
             except (ValueError,KeyError,OSError):
                 continue
 

@@ -21,6 +21,7 @@ from agent import BASE_MODEL, MODEL, Job, OUTPUT, readable, run_job, execute
 from download_model import download
 from settings import CONTEXT_LENGTH, MAX_QUERY_CHARS, PROFILES, DEFAULT_EFFORT, PROMPT_CACHE_MB
 from conversations import ConversationStore
+from file_transfer import download_span
 
 HERE = Path(__file__).resolve().parent
 TOKEN = secrets.token_urlsafe(32)
@@ -206,6 +207,41 @@ class Handler(BaseHTTPRequestHandler):
     def valid_host(self):
         return self.headers.get('Host') in {f'127.0.0.1:{self.server.server_port}',f'localhost:{self.server.server_port}'}
 
+    def send_file(self,path,content_type,disposition):
+        size=path.stat().st_size
+        try:
+            start,end,status=download_span(self.headers.get('Range'),size)
+        except ValueError:
+            self.send_response(416)
+            self.send_header('Content-Range',f'bytes */{size}')
+            self.send_header('Content-Length','0')
+            self.end_headers()
+            return
+        self.send_response(status)
+        self.send_header('Content-Type',content_type)
+        self.send_header('Content-Length',str(max(0,end-start+1)))
+        self.send_header('Accept-Ranges','bytes')
+        self.send_header('Cache-Control','no-store')
+        self.send_header('X-Content-Type-Options','nosniff')
+        self.send_header('Referrer-Policy','no-referrer')
+        if disposition:
+            self.send_header('Content-Disposition',disposition)
+        if status==206:
+            self.send_header('Content-Range',f'bytes {start}-{end}/{size}')
+        self.end_headers()
+        with path.open('rb') as handle:
+            handle.seek(start)
+            remaining=max(0,end-start+1)
+            while remaining:
+                block=handle.read(min(65536,remaining))
+                if not block:
+                    break
+                try:
+                    self.wfile.write(block)
+                except (BrokenPipeError,ConnectionResetError,ConnectionAbortedError):
+                    return
+                remaining-=len(block)
+
     def do_GET(self):
         if not self.valid_host():
             return self.send(403, {'error':'只允许本机访问'})
@@ -251,12 +287,14 @@ class Handler(BaseHTTPRequestHandler):
                 name = params.get('path',[''])[0]
                 dummy = type('Reader',(),{'output':OUTPUT})()
                 path = readable(dummy, name, directory=True)
-                if not path.is_file() or path.stat().st_size > 30_000_000:
-                    raise ValueError('文件不存在或超过 30MB')
+                if not path.is_file() or path.stat().st_size > 512*1024*1024:
+                    raise ValueError('文件不存在或超过 512MiB 下载上限')
                 ext = path.suffix.lower()
                 if ext not in {'.png','.jpg','.jpeg','.svg','.csv','.json','.txt','.md','.py','.xlsx','.pdf','.html'}:
                     raise ValueError('此文件类型不提供浏览器访问')
                 if route == '/reader' and ext in {'.md','.py','.txt','.csv','.json','.html'}:
+                    if path.stat().st_size>2_000_000:
+                        raise ValueError('文本超过 2MB，请下载后查看或由 Agent 分块处理')
                     text = path.read_text('utf-8-sig', errors='replace')
                     if ext=='.html':
                         body=re.search(r'<pre[^>]*>(.*?)</pre>',text,re.S)
@@ -264,7 +302,7 @@ class Handler(BaseHTTPRequestHandler):
                     page = '<!doctype html><meta charset="utf-8"><title>'+html.escape(path.name)+'</title><style>body{max-width:1100px;margin:40px auto;padding:24px;font:16px/1.7 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere}</style><h1>'+html.escape(path.name)+'</h1><pre>'+html.escape(text)+'</pre>'
                     return self.send(200,page,'text/html; charset=utf-8')
                 types = {'.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg'}
-                return self.send(200,path.read_bytes(),types.get(ext,'application/octet-stream'),
+                return self.send_file(path,types.get(ext,'application/octet-stream'),
                     None if ext in types else "attachment; filename*=UTF-8''"+urllib.parse.quote(path.name))
             return self.send(404,{'error':'页面不存在'})
         except (ValueError, KeyError, FileNotFoundError) as exc:

@@ -14,7 +14,7 @@ LOCK = threading.RLock()
 MEMORY = STATE / 'verified-workflows.json'
 
 def environment_version():
-    value={'python':sys.version.split()[0],'schema':'assert-verifier-v1'}
+    value={'python':sys.version.split()[0],'schema':'assert-verifier-v3-inputs-nontrivial'}
     for name in ['numpy','pandas','matplotlib']:
         try:
             value[name]=version(name)
@@ -81,22 +81,25 @@ def remember(job, paths, result):
         temporary.replace(MEMORY)
 
 def search_memory(query, limit=3):
-    terms = set(tokens(query))
+    generic={'验证','python','代码','文件','脚本','运行','执行','检查','任务','输出','工具','编写','实际','结果','assert'}
+    terms = set(tokens(query))-generic
     with LOCK:
         rows,_ = load_memory()
     environment=environment_version()
     valid = []
     for row in rows:
-        score = len(terms & set(tokens(row['question'])))
-        if score and row.get('environment')==environment and evidence_current(row['files']):
+        score = len(terms & (set(tokens(row['question']))-generic))
+        if score>=min(2,len(terms)) and terms and row.get('environment')==environment and evidence_current(row['files']):
             valid.append((score,row))
     return [row for _,row in sorted(valid,key=lambda item:item[0],reverse=True)[:limit]]
 
 WRAPPER = '''import ast,json,runpy,inspect
+from assertions import meaningful_assertion
 from pathlib import Path
 candidate=runpy.run_path('candidate.py',run_name='__candidate__')
 class Instrument(ast.NodeTransformer):
     def visit_Assert(self,node):
+        if not meaningful_assertion(node): return node
         return [ast.copy_location(ast.Expr(ast.Call(ast.Name('_count',ast.Load()),[],[])),node),node]
 tree=ast.parse(Path('verifier.py').read_text('utf-8'))
 tree=ast.fix_missing_locations(Instrument().visit(tree))
@@ -110,7 +113,7 @@ if count[0]==0 and callable(namespace.get('verify')):
     if size==0: function()
     elif size==1: function(candidate)
     else: raise ValueError('verify 只接受零参数或 candidate 一个参数')
-assert count[0]>0,'验证器没有执行断言'
+assert count[0]>0,'验证器没有执行有效断言；恒真或自比较不能作为验证证据'
 print('__KB_CHECKS__='+json.dumps({'checks':count[0]}))
 '''
 
@@ -135,8 +138,8 @@ def compare(job, candidates, verifier, run_script):
         wrapper.write_text(WRAPPER,'utf-8')
         started = time.monotonic()
         value = run_script(job,wrapper,folder)
-        report = re.search(r'__KB_CHECKS__=(\{[^\n]+\})',value['output'])
-        checks = json.loads(report[1])['checks'] if report else 0
+        report = re.findall(r'__KB_CHECKS__=(\{[^\n]+\})',value['output'])
+        checks = json.loads(report[-1])['checks'] if report else 0
         passed = value['exit_code']==0 and checks>0 and value.get('inputs_unchanged',False) and digest(oracle)==digest(verifier) and digest(copy)==digest(source)
         result = {'candidate':source.relative_to(job.output).as_posix(), 'passed':passed,
                   'checks':checks,'seconds':round(time.monotonic()-started,3), **value}

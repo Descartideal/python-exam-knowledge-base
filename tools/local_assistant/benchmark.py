@@ -27,6 +27,47 @@ id,group,score
 规则：先按 id 保留首条记录，再把 score 转为数值，剔除缺失或无效 score；按 group 计算有效 count、sum、mean，按 group 排序。将结果保存为 summary.csv，列名 group,count,sum,mean。脚本中用独立预期结果 assert 核对，再运行。给出真实执行结果。''',
      'expected':[{'group':'A','count':2,'sum':30,'mean':15},{'group':'B','count':2,'sum':70,'mean':35}]},
 ]
+EDGE_CASES=[
+    {'id':'dedup-before-clean','mode':'agent','file':'order_check.csv','query':'''实际完成 Python 数据处理并用 assert 核对。只需一个实现。
+输入 CSV：
+id,team,amount
+a1,X,5
+a2,X,
+a2,X,25
+a3,Y,-10
+a3,Y,50
+a4,Y,invalid
+a4,Y,80
+a5,X,15
+a6,Y,50
+必须先按 id 保留首条，再转数值并过滤无效 amount，不能把后续有效重复项替代第一条。按 team 汇总 count,sum,mean，按 team 排序，输出列名 group,count,sum,mean（group 是 team 的值），保存 order_check.csv 并实际运行。''',
+     'expected':[{'group':'X','count':2,'sum':20,'mean':10},{'group':'Y','count':2,'sum':40,'mean':20}]},
+    {'id':'left-join-multiplicity','mode':'agent','kind':'table','numeric_columns':['score'],'file':'join_check.csv','query':'''实际写入并运行 Python 脚本，做左连接并用 assert 核对，不需要多候选。
+左表 CSV：
+student,score
+S01,60
+S02,70
+S03,80
+右表 CSV：
+student,club
+S01,A
+S02,B
+S02,C
+S04,D
+按 student 左连接，右表的两条 S02 都保留，不要去重。未匹配的 club 填为 -；按 student,club 排序，保存 join_check.csv，列顺序 student,score,club。''',
+     'expected':[{'student':'S01','score':60,'club':'A'},{'student':'S02','score':70,'club':'B'},
+                 {'student':'S02','score':70,'club':'C'},{'student':'S03','score':80,'club':'-'}]},
+    {'id':'mixed-dates','mode':'agent','kind':'table','file':'date_check.csv','query':'''实际写入并运行 Python 数据处理脚本，并用 assert 核对。只需一个实现。
+输入 CSV：
+event,date
+e1,2024/01/02
+e2,2024-02-03
+e3,not-date
+e4,
+在当前 pandas 中解析混合的日期格式，将有效日期统一为 YYYY-MM-DD，无法解析或缺失的日期填为 INVALID，保留所有 4 条输入。保存 date_check.csv，列名 event,date，保持输入顺序。''',
+     'expected':[{'event':'e1','date':'2024-01-02'},{'event':'e2','date':'2024-02-03'},
+                 {'event':'e3','date':'INVALID'},{'event':'e4','date':'INVALID'}]},
+]
 
 def json_answer(text):
     text=text.strip()
@@ -36,7 +77,7 @@ def json_answer(text):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--suite',choices=['chat','agent','all'],default='chat')
+    parser.add_argument('--suite',choices=['chat','agent','all','edge'],default='chat')
     parser.add_argument('--effort',choices=['none','light','medium','heavy','max'],default='light')
     parser.add_argument('--timeout',type=int,default=900)
     parser.add_argument('--wait-ready',type=int,default=120,help='最多等待模型启动验证的秒数')
@@ -57,8 +98,12 @@ def main():
             raise SystemExit('模型启动验证仍未完成，请就绪后再运行检查。')
         time.sleep(1)
     results=[]
-    for case in CASES:
-        if args.suite!='all' and case['mode']!=args.suite:
+    output=ROOT/'.local-assistant'/('benchmark-'+time.strftime('%Y%m%d-%H%M%S')+'.json')
+    selected=EDGE_CASES if args.suite=='edge' else CASES
+    def save_results():
+        output.write_text(json.dumps({'scope':f'{len(selected)} 道固定小型检查，不代表通用能力基准','suite':args.suite,'results':results},ensure_ascii=False,indent=2),'utf-8')
+    for case in selected:
+        if args.suite not in {'all','edge'} and case['mode']!=args.suite:
             continue
         value=request('/api/chat',{'query':case['query'],'mode':case['mode'],'automatic':case['mode']=='agent','effort':args.effort,'benchmark':True})
         job_id=value['id']
@@ -86,9 +131,13 @@ def main():
             if case['mode']=='chat':
                 actual=json_answer(value['answer'])
             else:
-                path=ROOT/'13-运行结果'/'AI助手'/job_id/'summary.csv'
+                path=ROOT/'13-运行结果'/'AI助手'/job_id/case.get('file','summary.csv')
                 with path.open(encoding='utf-8-sig',newline='') as handle:
-                    actual=[{'group':r['group'],**{k:float(r[k]) for k in ['count','sum','mean']}} for r in csv.DictReader(handle)]
+                    rows=list(csv.DictReader(handle))
+                if case.get('kind')=='table':
+                    actual=[{k:float(v) if k in case.get('numeric_columns',[]) else v for k,v in r.items()} for r in rows]
+                else:
+                    actual=[{'group':r['group'],**{k:float(r[k]) for k in ['count','sum','mean']}} for r in rows]
             passed=actual==case['expected']
         except (ValueError,OSError,KeyError) as exc:
             error=str(exc)
@@ -96,9 +145,9 @@ def main():
                 'actual':actual,'expected':case['expected'],'error':error,'answer':value['answer'],'metrics':value['metrics'],
                 'task_completed':value.get('task_completed')}
         results.append(result)
+        save_results()
         print(case['id']+' '+('PASS' if passed else 'FAIL'),flush=True)
-    output=ROOT/'.local-assistant'/('benchmark-'+time.strftime('%Y%m%d-%H%M%S')+'.json')
-    output.write_text(json.dumps({'scope':'4 道固定小型检查，不代表通用能力基准','results':results},ensure_ascii=False,indent=2),'utf-8')
+    save_results()
     print(str(output),flush=True)
     if any(not result['passed'] for result in results):
         raise SystemExit(1)

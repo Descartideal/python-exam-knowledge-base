@@ -7,6 +7,7 @@ import json
 import types
 import sys
 import hashlib
+from assertions import meaningful_assertion
 
 script = Path(sys.argv[1]).resolve()
 output = Path(os.environ['KB_OUTPUT']).resolve()
@@ -72,6 +73,8 @@ else:
     def count_assertion(): checked[0]+=1
     class Instrument(ast.NodeTransformer):
         def visit_Assert(self,node):
+            if not meaningful_assertion(node):
+                return node
             return [ast.copy_location(ast.Expr(ast.Call(ast.Name('_kb_count_assertion',ast.Load()),[],[])),node),node]
     tree=ast.fix_missing_locations(Instrument().visit(tree))
     module=types.ModuleType('__main__')

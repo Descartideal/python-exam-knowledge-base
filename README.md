@@ -134,11 +134,13 @@ node tools\local_assistant\test_markdown.cjs
 
 ```powershell
 .\.venv\Scripts\python.exe tools\local_assistant\benchmark.py --suite all --effort none
+.\.venv\Scripts\python.exe tools\local_assistant\benchmark.py --suite edge --effort light
+.\.venv\Scripts\python.exe tools\local_assistant\benchmark_retrieval.py
 ```
 
 包含 NumPy 广播、列表复制、缺失值统计和实际 CSV 清洗文件核对；结果写入本地 `.local-assistant/benchmark-*.json`，不会上传用户数据。这是固定小型检查集，不代表通用能力评分。知识问答可使用受限的只读计算工具获取实际数值，完整脚本仍在 Agent 模式执行。
 
-检查覆盖资料检索、接口校验、路径限制、Python 实际执行、下载续传及校验、长对话和阅读位置保持。前两项使用项目 Python 环境；阅读位置回归检查需要额外安装 Node.js，日常使用助手无需 Node.js。下载测试使用模拟文件，不会重新下载大模型。
+检查覆盖资料检索、接口校验、路径限制、Python 实际执行、下载续传及校验、长对话和阅读位置保持。前两项使用项目 Python 环境；阅读位置及排版回归检查需要额外安装 Node.js，日常使用助手无需 Node.js。下载测试使用模拟文件，不会重新下载大模型。最新修复、实机通过与未通过项见 [持续优化记录](持续优化记录.md)。
 
 ## 验证与来源
 
