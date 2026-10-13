@@ -19,7 +19,7 @@ from pathlib import Path
 from retrieval import ROOT, STATE, OLLAMA, EMBEDDING, Index, api
 from agent import BASE_MODEL, MODEL, Job, OUTPUT, readable, run_job, execute
 from download_model import download
-from settings import CONTEXT_LENGTH, MAX_QUERY_CHARS, PROFILES, DEFAULT_EFFORT
+from settings import CONTEXT_LENGTH, MAX_QUERY_CHARS, PROFILES, DEFAULT_EFFORT, PROMPT_CACHE_MB
 from conversations import ConversationStore
 
 HERE = Path(__file__).resolve().parent
@@ -63,7 +63,8 @@ def deployment_worker():
                     raise RuntimeError('未找到 Ollama，请先安装 Ollama')
                 env = os.environ.copy()
                 env.update({'OLLAMA_HOST':'127.0.0.1:11435','NO_PROXY':'localhost,127.0.0.1',
-                    'OLLAMA_NUM_PARALLEL':'1', 'OLLAMA_MAX_LOADED_MODELS':'1', 'OLLAMA_NO_CLOUD':'1'})
+                    'OLLAMA_NUM_PARALLEL':'1', 'OLLAMA_MAX_LOADED_MODELS':'1', 'OLLAMA_NO_CLOUD':'1',
+                    'LLAMA_ARG_CACHE_RAM':str(PROMPT_CACHE_MB)})
                 env.pop('HTTP_PROXY',None)
                 env.pop('http_proxy',None)
                 if os.name == 'nt':
@@ -174,7 +175,7 @@ def run_serial(job):
                 CHATS.append(job.conversation_id, {'role':'assistant','content':job.answer,
                     'sources':job.sources,'files':job.snapshot()['files'], 'metrics':job.metrics,
                     'events':[e for e in job.events if e['kind'] in {'tool_start','tool_result'}],
-                    'job_id':job.id, 'status':job.status})
+                    'job_id':job.id, 'status':job.status,'task_completed':job.task_completed})
         finally:
             job.persisted = True
             INFERENCE_LOCK.release()
@@ -215,6 +216,14 @@ class Handler(BaseHTTPRequestHandler):
             if route == '/':
                 page = (HERE / 'index.html').read_text('utf-8').replace('__TOKEN__',TOKEN)
                 return self.send(200, page, 'text/html; charset=utf-8')
+            if route.startswith('/assets/'):
+                assets=(HERE/'assets').resolve()
+                path=(assets/urllib.parse.unquote(route[len('/assets/'):])).resolve()
+                types={'.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8',
+                       '.woff2':'font/woff2','.woff':'font/woff','.ttf':'font/ttf'}
+                if not path.is_relative_to(assets) or not path.is_file() or path.suffix not in types:
+                    return self.send(404,{'error':'资源不存在'})
+                return self.send(200,path.read_bytes(),types[path.suffix])
             if route == '/api/status':
                 with DEPLOY_LOCK:
                     value = dict(DEPLOY)
@@ -278,7 +287,7 @@ class Handler(BaseHTTPRequestHandler):
             data = json.loads(self.rfile.read(length))
             if route == '/api/conversation/save':
                 with JOB_LOCK:
-                    if any(getattr(j,'conversation_id',None)==data.get('id') and
+                    if data.get('id') and any(getattr(j,'conversation_id',None)==data['id'] and
                            (j.status in {'running','waiting'} or not getattr(j,'persisted',True))
                            for j in JOBS.values()):
                         return self.send(409, {'error':'任务运行中，对话由后台自动保存'})
@@ -331,6 +340,7 @@ class Handler(BaseHTTPRequestHandler):
                         query.strip(),history,mode, bool(data.get('automatic',False)) and mode=='agent',effort)
                     JOBS[job.id] = job
                     job.conversation_id = conversation_id
+                    job.benchmark = data.get('benchmark') is True
                     job.persisted = not bool(conversation_id)
                 threading.Thread(target=run_serial,args=(job,),daemon=True).start()
                 return self.send(200,{'id':job.id})

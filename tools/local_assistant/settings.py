@@ -14,6 +14,9 @@ PROFILES = {
 }
 DEFAULT_EFFORT = 'medium'
 TASK_TOKEN_LIMIT = 262144
+# 本机曾在跨请求缓存恢复时停滞；禁用额外的多请求快照缓存。
+# 不降低上下文上限，同一活动请求的 KV 上下文仍保留。
+PROMPT_CACHE_MB = 0
 for name, seconds, lines in [('none',60,200),('light',60,300),('medium',90,500),('heavy',180,800),('max',300,1000)]:
     PROFILES[name].update(runtime_seconds=seconds,read_lines=lines)
 for name, budget in [('none',0),('light',1024),('medium',4096),('heavy',8192),('max',16384)]:

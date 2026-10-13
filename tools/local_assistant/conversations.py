@@ -30,7 +30,7 @@ class ConversationStore:
                 continue
             try:
                 record = json.loads(source.read_text('utf-8'))
-                if record.get('conversation_id'):
+                if record.get('conversation_id') or record.get('benchmark'):
                     continue
                 self.save({'id':ident,'messages':[
                     {'role':'user','content':record['question']},
@@ -54,8 +54,11 @@ class ConversationStore:
 
     def list(self):
         with self.connect() as db:
-            return [dict(row) for row in db.execute(
-                'SELECT id,title,created,updated FROM chats ORDER BY updated DESC')]
+            rows=[dict(row) for row in db.execute(
+                'SELECT id,title,created,updated,metadata FROM chats ORDER BY updated DESC')]
+        for row in rows:
+            row['category']=json.loads(row.pop('metadata')).get('category','conversation')
+        return rows
 
     def get(self, ident):
         with self.connect() as db:

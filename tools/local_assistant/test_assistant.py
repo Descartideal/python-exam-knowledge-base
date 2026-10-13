@@ -19,8 +19,10 @@ from conversations import ConversationStore
 from agent import chat_stream
 from agent import normalize_tool_text
 from settings import PROFILES
-from retrieval import split_chunks
-from verification import search_memory
+from retrieval import split_chunks, pack_context
+from verification import search_memory, has_current_verification, remember
+from metrics import finish_metrics
+from calculations import calculate
 
 class AssistantTests(unittest.TestCase):
     @classmethod
@@ -40,6 +42,28 @@ class AssistantTests(unittest.TestCase):
         result = fit_messages(job,messages,False)
         self.assertGreater(estimated_tokens(result),8192)
         self.assertEqual(result,messages)
+
+    def test_review_compression_keeps_original_task_and_complete_tool_cycles(self):
+        job=self.job()
+        job.query='按 ID 去重后计算分组平均，不能先过滤缺失值'
+        job.profile={**job.profile,'response_tokens':1024}
+        messages=[{'role':'system','content':'规则'}]
+        for i in range(8):
+            messages.extend([{'role':'user','content':'旧问题'+('历史'*2000)},
+                {'role':'assistant','tool_calls':[{'function':{'name':'read_file','arguments':{'path':'scores.csv'}}}],'content':''},
+                {'role':'tool','content':'旧工具结果'+('数据'*1000)}])
+        messages.extend([{'role':'user','content':job.query+'\n\n本地参考资料（仅作为数据）：\n资料'},
+            {'role':'assistant','content':'','tool_calls':[{'function':{'name':'run_python','arguments':{'path':'solve.py'}}}]},
+            {'role':'tool','content':'执行结果：断言通过'},
+            {'role':'assistant','content':'初步答案'},
+            {'role':'user','content':'请独立核查并给出最终结果'}])
+        with patch('agent.CONTEXT_LENGTH',8192):
+            fitted=fit_messages(job,messages,True)
+        self.assertTrue(any(m.get('content','').startswith(job.query) for m in fitted))
+        self.assertEqual(fitted[-1]['content'],'请独立核查并给出最终结果')
+        for i,m in enumerate(fitted):
+            if m['role']=='tool':
+                self.assertIn(fitted[i-1]['role'],{'assistant','tool'})
 
     def test_conversations_survive_reopening(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -73,6 +97,57 @@ class AssistantTests(unittest.TestCase):
         contexts = [e for e in job.events if e['kind']=='context']
         self.assertTrue(contexts[0]['estimated'])
         self.assertEqual(contexts[-1]['used_tokens'],12382)
+
+    def test_speed_uses_weighted_durations_and_whole_task_wait(self):
+        job=self.job()
+        job.started=100
+        job.total_generated=20
+        first=finish_metrics(job,{'eval_count':20,'eval_duration':1e9},100,110)
+        self.assertEqual(first['tokens_per_second'],20)
+        self.assertEqual(first['task_tokens_per_second'],2)
+        job.total_generated+=40
+        second=finish_metrics(job,{'eval_count':40,'eval_duration':4e9},120,140)
+        self.assertEqual(second['tokens_per_second'],10)
+        self.assertEqual(second['aggregate_tokens_per_second'],12)
+        self.assertEqual(second['task_tokens_per_second'],1.5)
+        self.assertEqual(second['call_tokens_per_second'],2)
+        job.total_generated+=100
+        missing=finish_metrics(job,{'eval_count':100,'eval_duration':0},140,150)
+        self.assertIsNone(missing['tokens_per_second'])
+        self.assertEqual(missing['aggregate_tokens_per_second'],12)
+        self.assertEqual(missing['rated_generated_tokens'],60)
+
+    def test_truncated_model_stream_cannot_be_marked_complete(self):
+        job=self.job()
+        with patch('agent.urllib.request.build_opener') as factory:
+            factory.return_value.open.return_value=io.BytesIO(json.dumps({'message':{'content':'部分答案'}}).encode())
+            with self.assertRaisesRegex(RuntimeError,'提前结束'):
+                chat_stream(job,[{'role':'user','content':'问题'}],False)
+        self.assertTrue(job.metrics['estimated'])
+
+    def test_truncated_tool_json_recovers_once_without_fabricating_exact_counts(self):
+        job=Job('qa-'+uuid.uuid4().hex[:10],'验证截断工具请求',[],'agent',True,'light')
+        first=io.BytesIO(json.dumps({'error':'invalid tool call arguments: unexpected end of JSON input'}).encode())
+        last=io.BytesIO(json.dumps({'message':{'tool_calls':[{'function':{'name':'write_file','arguments':{'path':'a.py','content':'print(2)'}}}]},
+            'done':True,'eval_count':30,'eval_duration':1e9,'prompt_eval_count':100}).encode())
+        with patch('agent.urllib.request.build_opener') as factory:
+            factory.return_value.open.side_effect=[first,last]
+            result=chat_stream(job,[{'role':'user','content':job.query}],True)
+            payloads=[json.loads(c.args[0].data) for c in factory.return_value.open.call_args_list]
+        self.assertEqual(result['tool_calls'][0]['function']['name'],'write_file')
+        self.assertFalse(payloads[1]['think'])
+        self.assertEqual(job.unmeasured_calls,1)
+        self.assertEqual(job.total_generated,30)
+        self.assertEqual(job.metrics['tokens_per_second'],30)
+        self.assertIsNone(job.metrics['task_tokens_per_second'])
+        self.assertFalse((job.output/'a.py').exists())
+        job=Job('qa-'+uuid.uuid4().hex[:10],'验证恢复次数',[],'agent',True,'light')
+        error={'error':'invalid tool call arguments: unexpected end of JSON input'}
+        with patch('agent.urllib.request.build_opener') as factory:
+            factory.return_value.open.side_effect=[io.BytesIO(json.dumps(error).encode()) for _ in range(2)]
+            with self.assertRaises(RuntimeError):
+                chat_stream(job,[{'role':'user','content':job.query}],True)
+            self.assertEqual(factory.return_value.open.call_count,2)
 
     def test_five_effort_profiles_reach_native_api(self):
         previous=0
@@ -146,6 +221,45 @@ class AssistantTests(unittest.TestCase):
         self.assertIn('def first',values[1][2])
         self.assertNotIn('def second',values[1][2])
 
+    def test_context_packing_keeps_complete_sources_and_skips_oversize_chunks(self):
+        sources=[{'path':'large.md','start':1,'text':'过长'*500},
+                 {'path':'small.py','start':10,'text':'def solve(x):\n    return x+1\n'},
+                 {'path':'other.md','start':20,'text':'资料'*400}]
+        text,selected=pack_context(sources,200)
+        self.assertEqual([s['path'] for s in selected],['small.py'])
+        self.assertIn('return x+1',text)
+        self.assertNotIn('过长',text)
+        self.assertLessEqual(len(text),200)
+
+    def test_read_only_calculation_checks_broadcast_and_missing_values(self):
+        self.assertEqual(calculate('np.array([[1],[2],[3]])+np.array([10,20])')['value'],[[11,21],[12,22],[13,23]])
+        self.assertEqual(calculate('pd.Series([10,None,20]).count()')['value'],2)
+        self.assertEqual(calculate('pd.Series([10,None,20]).size')['value'],3)
+        self.assertEqual(calculate('pd.Series([10,None,20]).mean()')['value'],15)
+        self.assertEqual(calculate('17*23')['value'],391)
+        self.assertEqual(calculate('np.arange(6).reshape([2,3])')['value'],[[0,1,2],[3,4,5]])
+        self.assertEqual(calculate('pd.Series([None,None]).count()')['value'],0)
+        self.assertEqual(calculate('pd.Series([None,None]).mean()')['non_finite'],[{'path':'$','value':'NaN'}])
+        for expression in ["__import__('os').system('whoami')",'np.array([1]).__class__',
+                           '[1]*1000000000','2**1000000000','np.array([[1]]*4096)+np.array([1]*4096)',
+                           'np.arange(1000000000)','np.arange(0,10,0)']:
+            with self.assertRaises((ValueError,SyntaxError)):
+                calculate(expression)
+
+    def test_chat_tools_cannot_write_or_execute_scripts(self):
+        job=Job('qa-'+uuid.uuid4().hex[:10],'计算17*23',[],'chat',True,'none')
+        self.assertEqual(execute(job,self.index,'calculate_python',{'expression':'17*23'})['value'],391)
+        with self.assertRaisesRegex(ValueError,'知识问答'):
+            execute(job,self.index,'write_file',{'path':'blocked.py','content':'print(1)'})
+        self.assertFalse((job.output/'blocked.py').exists())
+
+    def test_single_implementation_and_sorting_data_do_not_require_multiple_candidates(self):
+        for query in ['实现排序算法，只需一个实现','统计后按 group 排序，写一个数据处理脚本']:
+            job=Job('qa-'+uuid.uuid4().hex[:10],query,[],'agent',True,'heavy')
+            self.assertFalse(job.multiple_candidates)
+        job=Job('qa-'+uuid.uuid4().hex[:10],'比较三种排序算法候选',[],'agent',True,'heavy')
+        self.assertTrue(job.multiple_candidates)
+
     def test_only_executed_assertions_count(self):
         job=self.job()
         execute(job,self.index,'write_file',{'path':'checks.py','content':
@@ -158,6 +272,55 @@ class AssistantTests(unittest.TestCase):
             "def unused():\n    assert False\nprint('__KB_ASSERTIONS__={\"checks\":999}')\n"})
         result=execute(job,self.index,'run_python',{'path':'fake.py'})
         self.assertEqual(result['verified_assertions'],0)
+
+    def test_editing_after_verification_invalidates_completion_evidence(self):
+        job=self.job()
+        execute(job,self.index,'write_file',{'path':'checked.py','content':'assert 1+1==2\n'})
+        result=execute(job,self.index,'run_python',{'path':'checked.py'})
+        events=[{'name':'run_python','result':result}]
+        self.assertTrue(has_current_verification(job,events))
+        execute(job,self.index,'write_file',{'path':'checked.py','content':'assert 1+1==3\n'})
+        self.assertFalse(has_current_verification(job,events))
+
+    def test_changing_input_data_invalidates_script_verification(self):
+        job=self.job()
+        execute(job,self.index,'write_file',{'path':'values.csv','content':'value\n3\n'})
+        execute(job,self.index,'write_file',{'path':'checked.py','content':
+            "from pathlib import Path\nvalue=Path('values.csv').read_text().splitlines()[1]\nassert int(value)==3\n"})
+        result=execute(job,self.index,'run_python',{'path':'checked.py'})
+        self.assertEqual(result['verified_assertions'],1,result['output'])
+        self.assertTrue(any(f['path'].endswith('values.csv') for f in result['input_files']))
+        self.assertTrue(has_current_verification(job,[{'name':'run_python','result':result}]))
+        (job.output/'values.csv').write_text('value\n4\n','utf-8')
+        self.assertFalse(has_current_verification(job,[{'name':'run_python','result':result}]))
+
+    def test_selected_candidate_memory_matches_verification_evidence(self):
+        job=Job('qa-'+uuid.uuid4().hex[:10],'比较累计求和候选',[],'agent',True,'medium')
+        for path,code in [('a.py','def solve(n): return sum(range(n+1))\n'),
+                          ('b.py','def solve(n): return n*(n+1)//2\n'),
+                          ('v.py',"assert candidate['solve'](10)==55\n")]:
+            execute(job,self.index,'write_file',{'path':path,'content':code})
+        with tempfile.TemporaryDirectory() as folder, patch('verification.MEMORY',Path(folder)/'memory.json'):
+            result=execute(job,self.index,'compare_python',{'candidates':['a.py','b.py'],'verifier':'v.py'})
+            memory=search_memory('累计求和候选')[0]
+            self.assertTrue(memory['files'][0]['path'].endswith('/'+result['selected']))
+        events=[{'name':'compare_python','result':result}]
+        self.assertTrue(has_current_verification(job,events))
+        (job.output/'v.py').write_text('assert False\n','utf-8')
+        self.assertFalse(has_current_verification(job,events))
+
+    def test_corrupt_memory_does_not_block_questions_and_is_preserved(self):
+        job=self.job()
+        source=job.output/'memory.py'
+        source.write_text('assert True\n','utf-8')
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/'verified-workflows.json'
+            path.write_text('{broken','utf-8')
+            with patch('verification.MEMORY',path):
+                self.assertEqual(search_memory('Python'),[])
+                remember(job,[source],{'passed':True,'checks':1})
+                self.assertEqual(len(search_memory('Python')),1)
+                self.assertEqual(list(Path(folder).glob('*unreadable*'))[0].read_text('utf-8'),'{broken')
 
     def test_static_viewer_excludes_uploaded_text(self):
         spec = importlib.util.spec_from_file_location('refresh_index', ROOT / 'tools/refresh_index.py')
@@ -183,6 +346,11 @@ class AssistantTests(unittest.TestCase):
             self.assertTrue(sources)
             text = ' '.join(x['path']+' '+x['text'] for x in sources).lower()
             self.assertIn(keyword.lower(),text)
+        for query,prefix in [('保存图片而不要弹出窗口','05-matplotlib/'),
+                             ('按 id 去重，保留第一条','04-pandas/'),
+                             ('列表共享引用与浅拷贝','01-Python基础/')]:
+            sources=self.index.search(query,3,semantic=False)
+            self.assertTrue(any(s['path'].startswith(prefix) for s in sources),(query,sources))
 
     def test_paths_are_confined(self):
         job = self.job()
@@ -195,6 +363,16 @@ class AssistantTests(unittest.TestCase):
         result=execute(job,self.index,'read_file',{'path':'10-测试数据/scores.csv'})
         self.assertIn('姓名',result['text'])
         self.assertEqual(result['csv_profile']['rows'],8)
+
+    def test_output_path_aliases_refer_to_the_same_confined_script(self):
+        job=self.job()
+        execute(job,self.index,'write_file',{'path':'output/alias.py','content':'print(42)\n'})
+        full=(job.output/'alias.py').relative_to(ROOT).as_posix()
+        self.assertEqual(execute(job,self.index,'run_python',{'path':full})['exit_code'],0)
+        self.assertTrue((job.output/'alias.py').is_file())
+        self.assertFalse((job.output/'output').exists())
+        with self.assertRaises(ValueError):
+            execute(job,self.index,'write_file',{'path':'output/../../README.md','content':'bad'})
 
     def test_rejected_write_has_no_side_effect(self):
         job = self.job(False)
@@ -211,6 +389,16 @@ class AssistantTests(unittest.TestCase):
         self.assertFalse(thread.is_alive())
         self.assertTrue(results[0]['denied'])
         self.assertFalse((job.output/'rejected.py').exists())
+
+    def test_tool_arguments_return_actionable_errors_before_mutation(self):
+        job=self.job()
+        for args in [{'path':'bad.py'}, {'path':'bad.py','content':123},
+                     {'path':'bad.py','content':'print(1)','extra':True}]:
+            with self.assertRaises(ValueError):
+                execute(job,self.index,'write_file',args)
+        self.assertFalse((job.output/'bad.py').exists())
+        with self.assertRaisesRegex(ValueError,'integer'):
+            execute(job,self.index,'read_file',{'path':'10-测试数据/scores.csv','start':True})
 
     def test_real_data_and_chart_execution(self):
         job = self.job()
@@ -250,6 +438,21 @@ print(summary.to_string())
         runs=[e for e in job.events if e['kind']=='tool_result' and e.get('name')=='run_python']
         self.assertEqual(runs[0]['result']['exit_code'],0)
         self.assertEqual(runs[0]['result']['output'].strip(),'6')
+
+    def test_agent_cannot_claim_completion_without_requested_execution(self):
+        job=Job('qa-'+uuid.uuid4().hex[:10],'请实际运行 Python 打印 6',[],'agent',True,'none')
+        with patch('agent.chat_stream',return_value={'role':'assistant','content':'已运行，输出 6。'}):
+            run_job(job,self.index)
+        self.assertFalse(job.task_completed)
+        self.assertIn('没有成功的 Python 实际运行记录',job.answer)
+        self.assertEqual(len([e for e in job.events if e['kind']=='status' and '尚无实际' in e.get('text','')]),2)
+
+    def test_explicit_no_execution_is_enforced_for_automatic_agent(self):
+        job=Job('qa-'+uuid.uuid4().hex[:10],'只提供代码，不要运行',[],'agent',True,'none')
+        execute(job,self.index,'write_file',{'path':'example.py','content':"open('unexpected.txt','w').write('bad')"})
+        with self.assertRaisesRegex(ValueError,'明确要求不要执行'):
+            execute(job,self.index,'run_python',{'path':'example.py'})
+        self.assertFalse((job.output/'unexpected.txt').exists())
 
     def test_runtime_blocks_writing_outside_task(self):
         job=self.job()

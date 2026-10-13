@@ -83,6 +83,18 @@ def split_chunks(raw, suffix):
         yield start,end,'\n'.join(lines[start:end])[:8000]
         start=max(start+1,end-3) if end<len(lines) else end
 
+def pack_context(sources, budget=12000):
+    """仅装入完整片段，保持行号与代码块；需要更多内容时仍可使用检索工具。"""
+    selected=[]
+    used=0
+    for source in sources:
+        block=f"[{source['path']}:{source['start']}]\n{source['text']}"
+        if used+len(block)+(2 if selected else 0)>budget:
+            continue
+        selected.append(source)
+        used+=len(block)+(2 if len(selected)>1 else 0)
+    return '\n\n'.join(f"[{c['path']}:{c['start']}]\n{c['text']}" for c in selected),selected
+
 @functools.lru_cache(maxsize=128)
 def display_title(path,fallback):
     if path.endswith('.html'):
@@ -106,7 +118,7 @@ class Index:
     def rebuild(self):
         display_title.cache_clear()
         paths = list(knowledge_paths())
-        stamp = hashlib.sha256(('structure-rerank-v2\n'+'\n'.join(
+        stamp = hashlib.sha256(('structure-rerank-v3\n'+'\n'.join(
             f'{p.relative_to(ROOT)}:{p.stat().st_mtime_ns}:{p.stat().st_size}' for p in paths
         )).encode()).hexdigest()
         cache = STATE / 'chunks.json'
@@ -218,8 +230,11 @@ class Index:
     def _search(self, query, limit, semantic):
         expanded=query
         for pattern,extra in [(r'均分|平均成绩|按班级',' pandas groupby mean'),
+                              (r'去重|重复记录',' pandas drop_duplicates subset keep'),
+                              (r'日期.*(?:月|时间)|月份',' pandas to_datetime dt month'),
                               (r'数组形状|数组变形|改变形状',' numpy reshape'),
                               (r'柱状图|绘制图表',' matplotlib bar savefig'),
+                              (r'保存(?:图片|图表|图像)|不要弹(?:出)?窗口',' matplotlib savefig close'),
                               (r'中文分词|词频',' jieba cut'),(r'灰度|图像处理',' opencv cvtColor')]:
             if re.search(pattern,query): expanded+=extra
         terms = set(tokens(expanded))
@@ -251,13 +266,15 @@ class Index:
                 self.semantic_error = str(exc)
         selected, per_file = [], collections.Counter()
         identifiers=set(re.findall(r'[a-z_][a-z_0-9]{2,}',query.lower()))
+        assistant_query=bool(re.search(r'助手|模型|部署|上下文|思考档|额度|界面|README|tok(?:/s|速度|计数|用量)|知识库.*(?:使用|目录)|\b(?:agent|token|tok|ui)\b',query,re.I))
         def rerank(i):
             chunk=self.chunks[i]
             haystack=(chunk['title']+' '+chunk['path']+' '+chunk['text']).lower()
             matches=sum(bool(re.search(r'(?<![a-z_0-9])'+re.escape(term)+r'(?![a-z_0-9])',haystack)) for term in identifiers)
             coverage=len(terms & set(tokens(haystack)))/max(1,len(terms))
             # 查询中的明确 API 名称优先；这是轻量规则重排，不是交叉编码器。
-            return combined[i]*(1+.4*coverage+.8*matches/max(1,len(identifiers)))
+            priority=1 if '/' in chunk['path'] or assistant_query else .4
+            return priority*combined[i]*(1+.4*coverage+.8*matches/max(1,len(identifiers)))
         for i in sorted(combined,key=rerank,reverse=True):
             c = self.chunks[i]
             if per_file[c['path']] >= 2:
@@ -265,7 +282,7 @@ class Index:
             # 避免多个几乎相同的重叠片段挤占上下文。
             if any(x['path'] == c['path'] and abs(x['start'] - c['start']) < 4 for x in selected):
                 continue
-            selected.append(dict(c, title=display_title(c['path'],c['title']),score=round(combined[i], 5)))
+            selected.append(dict(c, title=display_title(c['path'],c['title']),score=round(rerank(i), 5)))
             per_file[c['path']] += 1
             if len(selected) >= limit:
                 break

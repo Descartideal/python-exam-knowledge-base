@@ -6,9 +6,14 @@ import ast
 import json
 import types
 import sys
+import hashlib
 
 script = Path(sys.argv[1]).resolve()
 output = Path(os.environ['KB_OUTPUT']).resolve()
+root = Path(os.environ['KB_ROOT']).resolve()
+input_files={}
+observing=False
+inputs_complete=True
 if not script.is_relative_to(output):
     raise SystemExit('脚本必须位于本任务目录')
 
@@ -25,12 +30,29 @@ def require_output(path):
         raise PermissionError('本地助手禁止写入本任务目录之外。请把 OUT 设置为 Path(os.environ["KB_OUTPUT"]) 或 Path.cwd()，不要复制例题的旧输出路径。')
 
 def audit(event,args):
+    global observing,inputs_complete
     if event=='open':
         path,mode,flags=args
         writing=(isinstance(mode,str) and any(c in mode for c in 'wax+')) or (
             isinstance(flags,int) and bool(flags & (os.O_WRONLY|os.O_RDWR|os.O_APPEND|os.O_CREAT|os.O_TRUNC)))
         if writing:
             require_output(path)
+        elif not observing and not isinstance(path,int):
+            # 仅记录普通 Python 读取的本地资料，避免把虚拟环境与缓存当成数据依赖。
+            try:
+                source=Path(os.fsdecode(path)).resolve()
+                if source.is_relative_to(root):
+                    relative=source.relative_to(root)
+                    if not any(p.startswith('.') for p in relative.parts) and 'tools' not in relative.parts and source.is_file():
+                        if len(input_files)>=16 and source not in input_files:
+                            inputs_complete=False
+                        elif source not in input_files:
+                            observing=True
+                            input_files[source]=hashlib.sha256(source.read_bytes()).hexdigest()
+            except (OSError,ValueError,TypeError):
+                inputs_complete=False
+            finally:
+                observing=False
     elif event in {'os.remove','os.rmdir','os.mkdir','os.chmod','os.utime','os.truncate'}:
         require_output(args[0])
     elif event in {'os.rename','os.replace','os.link','os.symlink'}:
@@ -61,3 +83,5 @@ else:
     finally:
         sys.modules['__main__']=previous
     print('__KB_ASSERTIONS__='+json.dumps({'checks':checked[0]}))
+print('__KB_INPUTS__='+json.dumps({'complete':inputs_complete,'files':[
+    {'path':p.relative_to(root).as_posix(),'sha256':checksum} for p,checksum in input_files.items()]},ensure_ascii=True))
