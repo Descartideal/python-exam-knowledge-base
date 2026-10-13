@@ -19,7 +19,7 @@ from pathlib import Path
 from retrieval import ROOT, STATE, OLLAMA, EMBEDDING, Index, api
 from agent import BASE_MODEL, MODEL, Job, OUTPUT, readable, run_job, execute
 from download_model import download
-from settings import CONTEXT_LENGTH, MAX_QUERY_CHARS
+from settings import CONTEXT_LENGTH, MAX_QUERY_CHARS, PROFILES, DEFAULT_EFFORT
 from conversations import ConversationStore
 
 HERE = Path(__file__).resolve().parent
@@ -123,8 +123,12 @@ def deployment_worker():
                     'seconds':round(result.get('total_duration',0)/1e9,2)}
                 # 实际验证工具循环、脚本创建和学习环境运行，而非只验证 API 可连接。
                 check = Job('deployment-check', '请实际完成：用 write_file 写入 verify_local.py，代码只做 print(sum([1,2,3]))，'
-                    '再用 run_python 执行它。不要只解释，最后报告工具返回的输出。', [], 'agent', True)
-                run_job(check, INDEX)
+                    '再用 run_python 执行它。不要只解释，最后报告工具返回的输出。', [], 'agent', True,'none')
+                # 启动只测模型和真实工具执行；检索已独立测试，避免无关资料拖慢每次重启。
+                class SmokeIndex:
+                    def search(self,*args,**kwargs):
+                        return []
+                run_job(check, SmokeIndex())
                 runs = [e for e in check.events if e['kind']=='tool_result' and e.get('name')=='run_python']
                 if not runs or not any(e['result'].get('exit_code')==0 and '6' in e['result'].get('output','') for e in runs):
                     state(stage='attention', message='模型问答已验证；Agent 自动测试未通过，请查看部署记录',
@@ -216,7 +220,8 @@ class Handler(BaseHTTPRequestHandler):
                     value = dict(DEPLOY)
                 return self.send(200, {'deployment':value, 'index':INDEX.stats(),
                     'output':str(OUTPUT), 'python':str(__import__('agent').PYTHON),
-                    'context_limit':CONTEXT_LENGTH, 'max_query_chars':MAX_QUERY_CHARS})
+                    'context_limit':CONTEXT_LENGTH, 'max_query_chars':MAX_QUERY_CHARS,
+                    'effort_profiles':PROFILES,'default_effort':DEFAULT_EFFORT})
             if route == '/api/conversations':
                 return self.send(200, {'items':CHATS.list()})
             if route == '/api/conversation':
@@ -304,6 +309,9 @@ class Handler(BaseHTTPRequestHandler):
                 mode = data.get('mode','chat')
                 if mode not in {'chat','agent'}:
                     raise ValueError('模式无效')
+                effort = data.get('effort',DEFAULT_EFFORT)
+                if effort not in PROFILES:
+                    raise ValueError('思考档位无效')
                 history = data.get('history',[])
                 if not isinstance(history,list) or any(not isinstance(x,dict) for x in history):
                     raise ValueError('历史记录无效')
@@ -320,7 +328,7 @@ class Handler(BaseHTTPRequestHandler):
                         history = saved['messages']
                         CHATS.append(conversation_id, {'role':'user','content':query.strip()})
                     job = Job(time.strftime('%Y%m%d-%H%M%S-')+uuid.uuid4().hex[:6],
-                        query.strip(),history,mode, bool(data.get('automatic',False)) and mode=='agent')
+                        query.strip(),history,mode, bool(data.get('automatic',False)) and mode=='agent',effort)
                     JOBS[job.id] = job
                     job.conversation_id = conversation_id
                     job.persisted = not bool(conversation_id)

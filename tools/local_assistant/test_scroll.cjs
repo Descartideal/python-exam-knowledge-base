@@ -46,6 +46,7 @@ const sandbox = {
   history: [], active: null, current: null, polling: false,
   save() {}, notify() {}, api: async () => ({ok: true}),
   streamEvents: [], updateContext() {}, cacheCurrent() {}, refreshChats() {},
+  showMetric() {},
   setTimeout() {},
   fetch: async () => ({json: async () => sandbox.response})
 };

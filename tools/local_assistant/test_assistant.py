@@ -17,6 +17,10 @@ from retrieval import Index, ROOT, STATE, chunk_key
 from agent import Job, TOOLS, bounded_path, execute, readable, run_job, fit_messages, estimated_tokens
 from conversations import ConversationStore
 from agent import chat_stream
+from agent import normalize_tool_text
+from settings import PROFILES
+from retrieval import split_chunks
+from verification import search_memory
 
 class AssistantTests(unittest.TestCase):
     @classmethod
@@ -24,7 +28,7 @@ class AssistantTests(unittest.TestCase):
         cls.index = Index()
 
     def job(self, automatic=True):
-        return Job('qa-'+uuid.uuid4().hex[:10], '验证 Python', [], 'agent', automatic)
+        return Job('qa-'+uuid.uuid4().hex[:10], '验证 Python', [], 'agent', automatic,'none')
 
     def test_256k_context_retains_long_history(self):
         job = self.job()
@@ -69,6 +73,91 @@ class AssistantTests(unittest.TestCase):
         contexts = [e for e in job.events if e['kind']=='context']
         self.assertTrue(contexts[0]['estimated'])
         self.assertEqual(contexts[-1]['used_tokens'],12382)
+
+    def test_five_effort_profiles_reach_native_api(self):
+        previous=0
+        for effort,profile in PROFILES.items():
+            job=Job('qa-'+uuid.uuid4().hex[:10],'验证档位',[],'chat',True,effort)
+            events=[{'message':{'thinking':'核查数值。'} if profile['think'] else {},'done':False},
+                    {'message':{'content':'2'},'done':True,'eval_count':12,'prompt_eval_count':30,'eval_duration':1e9}]
+            response=io.BytesIO(b'\n'.join(json.dumps(e).encode() for e in events))
+            with patch('agent.urllib.request.build_opener') as factory:
+                factory.return_value.open.return_value=response
+                value=chat_stream(job,[{'role':'user','content':'1+1'}],False)
+                payload=json.loads(factory.return_value.open.call_args.args[0].data)
+            self.assertIs(payload['think'],profile['think'])
+            self.assertEqual(payload['options']['num_predict'],profile['reasoning_slice_tokens'] if profile['think'] else profile['response_tokens'])
+            self.assertGreater(profile['response_tokens'],previous)
+            previous=profile['response_tokens']
+            self.assertEqual(value['content'],'2')
+            self.assertEqual(job.metrics['total_generated_tokens'],12)
+            self.assertLessEqual(job.metrics['thinking_tokens_estimate'],job.metrics['tokens'])
+
+    def test_thinking_budget_exhaustion_still_produces_answer(self):
+        job=Job('qa-'+uuid.uuid4().hex[:10],'验证思考回退',[],'chat',True,'light')
+        first=io.BytesIO(json.dumps({'message':{'thinking':'已有分析'},'done':True,
+            'done_reason':'length','prompt_eval_count':100,'eval_count':1024}).encode())
+        last=io.BytesIO(json.dumps({'message':{'content':'最终结果'},'done':True,
+            'prompt_eval_count':120,'eval_count':5}).encode())
+        with patch('agent.urllib.request.build_opener') as factory:
+            factory.return_value.open.side_effect=[first,last]
+            result=chat_stream(job,[{'role':'system','content':'规则'},{'role':'user','content':'问题'}],False)
+            values=[json.loads(c.args[0].data) for c in factory.return_value.open.call_args_list]
+        self.assertTrue(values[0]['think'])
+        self.assertFalse(values[1]['think'])
+        self.assertEqual(result['content'],'最终结果')
+        self.assertEqual(job.metrics['total_generated_tokens'],1029)
+        self.assertIn('已有分析',values[1]['messages'][-2]['content'])
+
+    def test_tool_text_normalization_keeps_examples_inert(self):
+        text='<tool_call>\n<function=run_python>\n<parameter=path>\nsolve.py\n</parameter>\n</function>\n</tool_call>'
+        result=normalize_tool_text(text)
+        self.assertEqual(result[0]['function']['arguments'],{'path':'solve.py'})
+        self.assertEqual(normalize_tool_text('工具格式示例：\n'+text),[])
+        self.assertEqual(normalize_tool_text(text.replace('run_python','unknown_tool')),[])
+
+    def test_candidates_are_selected_by_executed_assertions(self):
+        job=Job('qa-'+uuid.uuid4().hex[:10],'累计求和独立验证',[],'agent',True,'medium')
+        for name,code in [('good.py','def solve(n): return n*(n+1)//2\n'),
+                          ('bad.py','def solve(n): return n*(n-1)//2\n'),
+                          ('verify.py',"assert candidate['solve'](0)==0\nassert candidate['solve'](1)==1\nassert candidate['solve'](10)==55\n")]:
+            execute(job,self.index,'write_file',{'path':name,'content':code})
+        with tempfile.TemporaryDirectory() as directory, patch('verification.MEMORY',Path(directory)/'memory.json'):
+            result=execute(job,self.index,'compare_python',{'candidates':['bad.py','good.py'],'verifier':'verify.py'})
+            self.assertEqual(result['selected'],'good.py')
+            self.assertEqual(result['passed_count'],1)
+            self.assertEqual(result['results'][1]['checks'],3)
+            self.assertIn('AssertionError',result['results'][0]['output'])
+            self.assertEqual(len(search_memory('累计求和')),1)
+            (job.output/'good.py').write_text('changed','utf-8')
+            self.assertEqual(search_memory('累计求和'),[])
+        execute(job,self.index,'write_file',{'path':'good.py','content':'def solve(n): return n*(n+1)//2\n'})
+        execute(job,self.index,'write_file',{'path':'verify.py','content':
+            "def verify(candidate):\n    assert candidate['solve'](0)==0\n    assert candidate['solve'](10)==55\n"})
+        with tempfile.TemporaryDirectory() as directory, patch('verification.MEMORY',Path(directory)/'memory.json'):
+            result=execute(job,self.index,'compare_python',{'candidates':['good.py'],'verifier':'verify.py'})
+        self.assertEqual(result['passed_count'],1)
+        self.assertEqual(result['results'][0]['checks'],2)
+
+    def test_python_chunks_follow_function_boundaries(self):
+        raw='import math\n\ndef first(x):\n    return x+1\n\ndef second(x):\n    return x*2\n'
+        values=list(split_chunks(raw,'.py'))
+        self.assertEqual(len(values),3)
+        self.assertIn('def first',values[1][2])
+        self.assertNotIn('def second',values[1][2])
+
+    def test_only_executed_assertions_count(self):
+        job=self.job()
+        execute(job,self.index,'write_file',{'path':'checks.py','content':
+            'def unused():\n    assert False\nassert sum([1,2,3])==6\nprint("checked")\n'})
+        with tempfile.TemporaryDirectory() as directory, patch('verification.MEMORY',Path(directory)/'memory.json'):
+            result=execute(job,self.index,'run_python',{'path':'checks.py'})
+        self.assertEqual(result['exit_code'],0,result['output'])
+        self.assertEqual(result['verified_assertions'],1)
+        execute(job,self.index,'write_file',{'path':'fake.py','content':
+            "def unused():\n    assert False\nprint('__KB_ASSERTIONS__={\"checks\":999}')\n"})
+        result=execute(job,self.index,'run_python',{'path':'fake.py'})
+        self.assertEqual(result['verified_assertions'],0)
 
     def test_static_viewer_excludes_uploaded_text(self):
         spec = importlib.util.spec_from_file_location('refresh_index', ROOT / 'tools/refresh_index.py')
@@ -190,6 +279,7 @@ print(summary.to_string())
             messages.append({'role':'assistant','content':'','tool_calls':[{'function':{
                 'name':'write_file','arguments':{'path':'analysis.py','content':'print(1)\n'*2000}}}]})
             messages.append({'role':'tool','tool_name':'run_python','content':f'最新执行结果 {i}: 返回码 0'})
+        job.profile = {**job.profile,'response_tokens':2048}
         with patch('agent.CONTEXT_LENGTH',8192), patch('agent.RESPONSE_TOKENS',2048):
             result=fit_messages(job,messages,True)
         self.assertIn('系统规则',result[0]['content'])

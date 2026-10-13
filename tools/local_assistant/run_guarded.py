@@ -2,6 +2,9 @@
 import os
 from pathlib import Path
 import runpy
+import ast
+import json
+import types
 import sys
 
 script = Path(sys.argv[1]).resolve()
@@ -38,4 +41,23 @@ def audit(event,args):
 
 sys.addaudithook(audit)
 sys.argv=[str(script)]
-runpy.run_path(str(script),run_name='__main__')
+tree=ast.parse(script.read_text('utf-8-sig'),filename=str(script))
+if not any(isinstance(node,ast.Assert) for node in ast.walk(tree)):
+    runpy.run_path(str(script),run_name='__main__')
+else:
+    # 记录真正执行的断言，不把未调用函数里的 assert 算成已验证。
+    checked=[0]
+    def count_assertion(): checked[0]+=1
+    class Instrument(ast.NodeTransformer):
+        def visit_Assert(self,node):
+            return [ast.copy_location(ast.Expr(ast.Call(ast.Name('_kb_count_assertion',ast.Load()),[],[])),node),node]
+    tree=ast.fix_missing_locations(Instrument().visit(tree))
+    module=types.ModuleType('__main__')
+    module.__dict__.update(__file__=str(script),__package__='',_kb_count_assertion=count_assertion)
+    previous=sys.modules['__main__']
+    try:
+        sys.modules['__main__']=module
+        exec(compile(tree,str(script),'exec'),module.__dict__)
+    finally:
+        sys.modules['__main__']=previous
+    print('__KB_ASSERTIONS__='+json.dumps({'checks':checked[0]}))

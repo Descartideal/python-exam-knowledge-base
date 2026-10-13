@@ -8,6 +8,7 @@ import math
 import re
 import threading
 import functools
+import ast
 import urllib.request
 from pathlib import Path
 
@@ -56,6 +57,32 @@ def knowledge_paths():
 def chunk_key(chunk):
     return hashlib.sha256((chunk['path']+'\n'+chunk['title']+'\n'+chunk['text']).encode('utf-8')).hexdigest()
 
+def split_chunks(raw, suffix):
+    lines = raw.splitlines()
+    if suffix=='.py':
+        try:
+            tree = ast.parse(raw)
+            boundaries = [0]+[n.lineno-1 for n in tree.body if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef,ast.ClassDef))]+[len(lines)]
+            boundaries = sorted(set(boundaries))
+            for start,end in zip(boundaries,boundaries[1:]):
+                if end-start<=150 and sum(len(s) for s in lines[start:end])<=8000:
+                    yield start,end,'\n'.join(lines[start:end])
+                else:
+                    for offset in range(start,end,70):
+                        finish=min(end,offset+80)
+                        yield offset,finish,'\n'.join(lines[offset:finish])[:8000]
+            return
+        except SyntaxError:
+            pass
+    start = 0
+    while start<len(lines):
+        end,size = start,0
+        while end<len(lines) and (size<1500 or end==start):
+            size+=len(lines[end])+1
+            end+=1
+        yield start,end,'\n'.join(lines[start:end])[:8000]
+        start=max(start+1,end-3) if end<len(lines) else end
+
 @functools.lru_cache(maxsize=128)
 def display_title(path,fallback):
     if path.endswith('.html'):
@@ -79,9 +106,9 @@ class Index:
     def rebuild(self):
         display_title.cache_clear()
         paths = list(knowledge_paths())
-        stamp = hashlib.sha256('\n'.join(
+        stamp = hashlib.sha256(('structure-rerank-v2\n'+'\n'.join(
             f'{p.relative_to(ROOT)}:{p.stat().st_mtime_ns}:{p.stat().st_size}' for p in paths
-        ).encode()).hexdigest()
+        )).encode()).hexdigest()
         cache = STATE / 'chunks.json'
         cached = json.loads(cache.read_text('utf-8')) if cache.exists() else {}
         if cached.get('stamp') == stamp:
@@ -95,19 +122,11 @@ class Index:
                     raw = html.unescape(pre[1]) if pre else re.sub('<[^>]+>', ' ', raw)
                 title = re.search(r'^# (.+)', raw, re.M)
                 title = title[1] if title else p.stem
-                lines = raw.splitlines()
-                start = 0
-                while start < len(lines):
-                    end, size = start, 0
-                    while end < len(lines) and (size < 1500 or end == start):
-                        size += len(lines[end]) + 1
-                        end += 1
-                    content = '\n'.join(lines[start:end])
+                for start,end,content in split_chunks(raw,p.suffix):
                     if content.strip():
                         # 官方正文的行号是提取后的文字行号。
                         chunks.append({'id': len(chunks), 'path': p.relative_to(ROOT).as_posix(),
                                        'title': title, 'start': start + 1, 'end': end, 'text': content[:8000]})
-                    start = max(start + 1, end - 3) if end < len(lines) else end
             temp = cache.with_suffix('.tmp')
             temp.write_text(json.dumps({'stamp': stamp, 'chunks': chunks}, ensure_ascii=False), 'utf-8')
             temp.replace(cache)
@@ -197,7 +216,13 @@ class Index:
             return self._search(query, max(1, min(int(limit), 8)), semantic)
 
     def _search(self, query, limit, semantic):
-        terms = set(tokens(query))
+        expanded=query
+        for pattern,extra in [(r'均分|平均成绩|按班级',' pandas groupby mean'),
+                              (r'数组形状|数组变形|改变形状',' numpy reshape'),
+                              (r'柱状图|绘制图表',' matplotlib bar savefig'),
+                              (r'中文分词|词频',' jieba cut'),(r'灰度|图像处理',' opencv cvtColor')]:
+            if re.search(pattern,query): expanded+=extra
+        terms = set(tokens(expanded))
         count = len(self.chunks)
         scores = []
         for i, freq in enumerate(self.counters):
@@ -225,7 +250,15 @@ class Index:
             except Exception as exc:
                 self.semantic_error = str(exc)
         selected, per_file = [], collections.Counter()
-        for i in sorted(combined, key=combined.get, reverse=True):
+        identifiers=set(re.findall(r'[a-z_][a-z_0-9]{2,}',query.lower()))
+        def rerank(i):
+            chunk=self.chunks[i]
+            haystack=(chunk['title']+' '+chunk['path']+' '+chunk['text']).lower()
+            matches=sum(bool(re.search(r'(?<![a-z_0-9])'+re.escape(term)+r'(?![a-z_0-9])',haystack)) for term in identifiers)
+            coverage=len(terms & set(tokens(haystack)))/max(1,len(terms))
+            # 查询中的明确 API 名称优先；这是轻量规则重排，不是交叉编码器。
+            return combined[i]*(1+.4*coverage+.8*matches/max(1,len(identifiers)))
+        for i in sorted(combined,key=rerank,reverse=True):
             c = self.chunks[i]
             if per_file[c['path']] >= 2:
                 continue
