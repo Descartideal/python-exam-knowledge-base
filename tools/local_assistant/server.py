@@ -19,11 +19,14 @@ from pathlib import Path
 from retrieval import ROOT, STATE, OLLAMA, EMBEDDING, Index, api
 from agent import BASE_MODEL, MODEL, Job, OUTPUT, readable, run_job, execute
 from download_model import download
+from settings import CONTEXT_LENGTH, MAX_QUERY_CHARS
+from conversations import ConversationStore
 
 HERE = Path(__file__).resolve().parent
 TOKEN = secrets.token_urlsafe(32)
 INDEX = None
 JOBS = {}
+CHATS = ConversationStore()
 JOB_LOCK = threading.Lock()
 DEPLOY_LOCK = threading.RLock()
 INFERENCE_LOCK = threading.Lock()
@@ -93,9 +96,15 @@ def deployment_worker():
                 state(stage='configuring',message='全文件 SHA-256 校验通过，正在导入 Ollama',source=source)
                 for _ in stream_api('/api/create', {'model':MODEL, 'files':{source['file']:source['digest']},
                     'renderer':'qwen3.5', 'parser':'qwen3.5',
-                    'parameters':{'num_ctx':8192, 'num_batch':128, 'num_thread':12, 'temperature':.35}, 'stream':True}):
+                    'parameters':{'num_ctx':CONTEXT_LENGTH, 'num_batch':128, 'num_thread':12, 'temperature':.35}, 'stream':True}):
                     pass
             show = api('/api/show', {'model':MODEL})
+            if not re.search(r'num_ctx\s+'+str(CONTEXT_LENGTH)+r'\b',show.get('parameters','')):
+                for _ in stream_api('/api/create', {'model':MODEL, 'from':MODEL,
+                    'parameters':{'num_ctx':CONTEXT_LENGTH,'num_batch':128,'num_thread':12,'temperature':.35},
+                    'stream':True}):
+                    pass
+                show = api('/api/show', {'model':MODEL})
             details = show.get('details', {})
             if details.get('quantization_level') != 'Q4_K_M':
                 raise RuntimeError(f'量化版本不符：{details.get("quantization_level")}')
@@ -106,7 +115,7 @@ def deployment_worker():
             with INFERENCE_LOCK:
                 result = api('/api/chat', {'model':MODEL, 'stream':False, 'think':False,
                     'messages':[{'role':'user','content':'只用中文回复：本地部署成功'}],
-                    'options':{'num_ctx':8192,'num_predict':64}, 'keep_alive':'10m'}, timeout=900)
+                    'options':{'num_ctx':CONTEXT_LENGTH,'num_predict':64}, 'keep_alive':'10m'}, timeout=900)
                 text = result.get('message',{}).get('content','')
                 if not text.strip():
                     raise RuntimeError('首次问答没有返回正文')
@@ -148,11 +157,23 @@ def run_serial(job):
     while not INFERENCE_LOCK.acquire(timeout=.25):
         if job.cancel.is_set():
             job.status, job.answer = 'cancelled','任务已停止'
+            if getattr(job,'conversation_id',None):
+                CHATS.append(job.conversation_id, {'role':'assistant','content':job.answer,
+                    'job_id':job.id,'status':job.status})
+            job.persisted = True
             return
     try:
         run_job(job, INDEX)
     finally:
-        INFERENCE_LOCK.release()
+        try:
+            if getattr(job, 'conversation_id', None):
+                CHATS.append(job.conversation_id, {'role':'assistant','content':job.answer,
+                    'sources':job.sources,'files':job.snapshot()['files'], 'metrics':job.metrics,
+                    'events':[e for e in job.events if e['kind'] in {'tool_start','tool_result'}],
+                    'job_id':job.id, 'status':job.status})
+        finally:
+            job.persisted = True
+            INFERENCE_LOCK.release()
 
 class Handler(BaseHTTPRequestHandler):
     server_version = 'PythonKnowledgeAssistant/1.0'
@@ -194,11 +215,24 @@ class Handler(BaseHTTPRequestHandler):
                 with DEPLOY_LOCK:
                     value = dict(DEPLOY)
                 return self.send(200, {'deployment':value, 'index':INDEX.stats(),
-                    'output':str(OUTPUT), 'python':str(__import__('agent').PYTHON)})
+                    'output':str(OUTPUT), 'python':str(__import__('agent').PYTHON),
+                    'context_limit':CONTEXT_LENGTH, 'max_query_chars':MAX_QUERY_CHARS})
+            if route == '/api/conversations':
+                return self.send(200, {'items':CHATS.list()})
+            if route == '/api/conversation':
+                value = CHATS.get(params['id'][0])
+                with JOB_LOCK:
+                    running = next((j.id for j in JOBS.values() if getattr(j,'conversation_id',None)==value['id']
+                                    and j.status in {'running','waiting'}), None)
+                value['active_job'] = running
+                return self.send(200,value)
             if route == '/api/job':
                 with JOB_LOCK:
                     job = JOBS[params['id'][0]]
-                return self.send(200, job.snapshot(max(0,int(params.get('cursor',['0'])[0]))))
+                snapshot = job.snapshot(max(0,int(params.get('cursor',['0'])[0])))
+                if snapshot['status'] in {'done','error','cancelled'} and not getattr(job,'persisted',True):
+                    snapshot['status'] = 'running'
+                return self.send(200, snapshot)
             if route in {'/file','/reader'}:
                 name = params.get('path',[''])[0]
                 dummy = type('Reader',(),{'output':OUTPUT})()
@@ -234,9 +268,16 @@ class Handler(BaseHTTPRequestHandler):
         try:
             length = int(self.headers.get('Content-Length','0'))
             route = urllib.parse.urlsplit(self.path).path
-            if not 0 < length <= (12_000_000 if route == '/api/upload' else 100_000):
+            if not 0 < length <= (12_000_000 if route == '/api/upload' else 5_000_000):
                 raise ValueError('请求为空或过大')
             data = json.loads(self.rfile.read(length))
+            if route == '/api/conversation/save':
+                with JOB_LOCK:
+                    if any(getattr(j,'conversation_id',None)==data.get('id') and
+                           (j.status in {'running','waiting'} or not getattr(j,'persisted',True))
+                           for j in JOBS.values()):
+                        return self.send(409, {'error':'任务运行中，对话由后台自动保存'})
+                return self.send(200,CHATS.save(data))
             if route == '/api/upload':
                 name = data.get('name','')
                 if not isinstance(name,str) or not name or len(name)>180 or Path(name).name!=name or any(c in name for c in '/\\:<>|?*'):
@@ -258,8 +299,8 @@ class Handler(BaseHTTPRequestHandler):
                 if not DEPLOY.get('ready'):
                     return self.send(409, {'error':'模型尚未就绪。可以先使用“仅检索资料”。'})
                 query = data.get('query','')
-                if not isinstance(query,str) or not query.strip() or len(query)>3000:
-                    raise ValueError('问题为空或超过 3000 字，请拆分问题')
+                if not isinstance(query,str) or not query.strip() or len(query)>MAX_QUERY_CHARS:
+                    raise ValueError(f'问题为空或超过 {MAX_QUERY_CHARS} 字，请拆分问题')
                 mode = data.get('mode','chat')
                 if mode not in {'chat','agent'}:
                     raise ValueError('模式无效')
@@ -273,9 +314,16 @@ class Handler(BaseHTTPRequestHandler):
                     if len(JOBS) >= 50:
                         oldest = next(iter(JOBS))
                         del JOBS[oldest]
+                    conversation_id = data.get('conversation_id')
+                    if conversation_id:
+                        saved = CHATS.get(conversation_id)
+                        history = saved['messages']
+                        CHATS.append(conversation_id, {'role':'user','content':query.strip()})
                     job = Job(time.strftime('%Y%m%d-%H%M%S-')+uuid.uuid4().hex[:6],
                         query.strip(),history,mode, bool(data.get('automatic',False)) and mode=='agent')
                     JOBS[job.id] = job
+                    job.conversation_id = conversation_id
+                    job.persisted = not bool(conversation_id)
                 threading.Thread(target=run_serial,args=(job,),daemon=True).start()
                 return self.send(200,{'id':job.id})
             if route in {'/api/approve','/api/stop'}:

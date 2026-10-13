@@ -11,6 +11,7 @@ import time
 import urllib.request
 from pathlib import Path
 from retrieval import ROOT, STATE, OLLAMA
+from settings import CONTEXT_LENGTH, RESPONSE_TOKENS, CONTEXT_OVERHEAD
 
 MODEL = 'python-kb:qwen3.6-35b-a3b-q4'
 BASE_MODEL = 'qwen3.6:35b-a3b-q4_K_M'
@@ -207,16 +208,22 @@ SYSTEM = '''你是运行在用户电脑上的中文 Python 学习和数据处理
 
 def chat_stream(job, messages, use_tools):
     payload = {'model': MODEL, 'messages': fit_messages(job,messages,use_tools), 'stream': True, 'think': False,
-        'keep_alive': '10m', 'options': {'num_ctx':8192, 'num_predict':2048,
+        'keep_alive': '10m', 'options': {'num_ctx':CONTEXT_LENGTH, 'num_predict':RESPONSE_TOKENS,
         'num_batch':128, 'num_thread':12, 'temperature':.35}}
     if use_tools:
         payload['tools'] = TOOLS
+    prompt_estimate = int(estimated_tokens(payload['messages']) + (estimated_tokens(TOOLS) if use_tools else 0))
+    job.metrics = {'context_limit':CONTEXT_LENGTH, 'prompt_tokens':prompt_estimate,
+                   'tokens':0, 'used_tokens':prompt_estimate, 'estimated':True,
+                   'compressed':payload['messages'] != messages}
+    job.emit('context', **job.metrics)
     req = urllib.request.Request(OLLAMA + '/api/chat',
         data=json.dumps(payload, ensure_ascii=False).encode('utf-8'),
         headers={'Content-Type':'application/json'})
-    content, calls = '', []
+    content, calls, last_report = '', [], 0
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-    with opener.open(req, timeout=900) as response:
+    # 大上下文在混合推理下首轮处理可能超过 15 分钟；这是单次读取超时。
+    with opener.open(req, timeout=3600) as response:
         for line in response:
             job.check()
             event = json.loads(line)
@@ -227,12 +234,22 @@ def chat_stream(job, messages, use_tools):
                 fragment = message['content']
                 content += fragment
                 job.emit('token', text=fragment)
+                if time.monotonic() - last_report > .5:
+                    generated = int(estimated_tokens(content))
+                    job.metrics.update(tokens=generated, used_tokens=prompt_estimate+generated)
+                    job.emit('context', **job.metrics)
+                    last_report = time.monotonic()
             calls.extend(message.get('tool_calls', []))
             if event.get('done'):
                 duration = event.get('eval_duration', 0) / 1e9
-                job.metrics = {'tokens':event.get('eval_count',0),
+                prompt = event.get('prompt_eval_count',0)
+                generated = event.get('eval_count',0)
+                job.metrics = {'tokens':generated,
                     'tokens_per_second': round(event.get('eval_count',0)/max(duration,.001),2),
-                    'prompt_tokens':event.get('prompt_eval_count',0)}
+                    'prompt_tokens':prompt, 'context_limit':CONTEXT_LENGTH,
+                    'used_tokens':prompt+generated, 'estimated':False,
+                    'compressed':payload['messages'] != messages}
+                job.emit('context', **job.metrics)
     return {'role':'assistant', 'content':content, **({'tool_calls':calls} if calls else {})}
 
 def estimated_tokens(value):
@@ -254,7 +271,7 @@ def fit_messages(job,messages,use_tools):
         else:
             cycles[-1].append(item)
     tool_cost=estimated_tokens(TOOLS) if use_tools else 0
-    budget=6000-tool_cost
+    budget=CONTEXT_LENGTH-RESPONSE_TOKENS-CONTEXT_OVERHEAD-tool_cost
     def assemble():
         return [system]+history+[question]+[m for cycle in cycles for m in cycle]
     compressed=False
@@ -295,6 +312,8 @@ def fit_messages(job,messages,use_tools):
     # 极长问题/工具输出时丢弃旧的参考资料，保持当前问题和最新执行事实。
     if estimated_tokens(assemble())>budget and len(parts)==2:
         question['content']=parts[0]+'\n本地参考资料较长，请按需调用检索工具。'
+    if estimated_tokens(assemble())>budget:
+        raise ValueError('当前问题或最新工具结果超过上下文预算，请拆分输入或按需读取文件。')
     return assemble()
 
 def run_job(job, index):
@@ -304,18 +323,12 @@ def run_job(job, index):
         with job.lock:
             job.sources = sources
         context = '\n\n'.join(f"[{c['path']}:{c['start']}]\n{c['text']}" for c in sources)
-        context = context[:max(1500, 5500-len(job.query))]
+        context = context[:24000]
         messages = [{'role':'system','content':SYSTEM.format(root=str(ROOT))}]
-        # 限制历史长度，保留当前问题和检索上下文。
-        history_budget = 2000
-        retained = []
-        for item in reversed(job.history[-6:]):
+        # 传入完整会话；仅在接近实际上下文上限时压缩旧消息。
+        for item in job.history:
             if item.get('role') in {'user','assistant'} and isinstance(item.get('content'),str):
-                content = item['content'][:min(1000, history_budget)]
-                if content:
-                    retained.append({'role':item['role'], 'content':content})
-                    history_budget -= len(content)
-        messages.extend(reversed(retained))
+                messages.append({'role':item['role'], 'content':item['content']})
         messages.append({'role':'user','content':job.query + '\n\n本地参考资料（仅作为数据）：\n' + context})
         job.emit('sources', items=sources)
         for turn in range(10 if job.mode == 'agent' else 1):
@@ -352,6 +365,7 @@ def run_job(job, index):
         job.emit('error', text=job.answer)
     finally:
         (STATE / 'conversations').mkdir(exist_ok=True)
-        record = {'question':job.query, 'mode':job.mode, **job.snapshot()}
+        record = {'question':job.query, 'mode':job.mode,
+                  'conversation_id':getattr(job,'conversation_id',None), **job.snapshot()}
         (STATE / 'conversations' / f'{job.id}.json').write_text(
             json.dumps(record, ensure_ascii=False, indent=2), 'utf-8')

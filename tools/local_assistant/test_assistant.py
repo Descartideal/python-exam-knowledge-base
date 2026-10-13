@@ -10,10 +10,13 @@ import urllib.error
 import urllib.request
 import uuid
 import importlib.util
+import io
 from pathlib import Path
 from unittest.mock import patch
 from retrieval import Index, ROOT, STATE, chunk_key
 from agent import Job, TOOLS, bounded_path, execute, readable, run_job, fit_messages, estimated_tokens
+from conversations import ConversationStore
+from agent import chat_stream
 
 class AssistantTests(unittest.TestCase):
     @classmethod
@@ -22,6 +25,50 @@ class AssistantTests(unittest.TestCase):
 
     def job(self, automatic=True):
         return Job('qa-'+uuid.uuid4().hex[:10], '验证 Python', [], 'agent', automatic)
+
+    def test_256k_context_retains_long_history(self):
+        job = self.job()
+        messages = [{'role':'system','content':'系统规则'}]
+        for i in range(30):
+            messages.extend([{'role':'user','content':f'第 {i} 轮问题：'+('详细历史内容。'*300)},
+                             {'role':'assistant','content':f'第 {i} 轮回答：'+('此前的分析。'*300)}])
+        messages.append({'role':'user','content':'继续分析'})
+        result = fit_messages(job,messages,False)
+        self.assertGreater(estimated_tokens(result),8192)
+        self.assertEqual(result,messages)
+
+    def test_conversations_survive_reopening(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'chats.sqlite3'
+            store = ConversationStore(path)
+            a = store.save({'messages':[], 'metadata':{'draft':'待发送'}})
+            store.append(a['id'], {'role':'user','content':'第一段对话'})
+            store.append(a['id'], {'role':'assistant','content':'回答', 'metrics':{'used_tokens':123}})
+            b = store.save({'messages':[{'role':'user','content':'第二段对话'}], 'metadata':{'mode':'agent'}})
+            reopened = ConversationStore(path)
+            self.assertEqual(len(reopened.list()),2)
+            first = reopened.get(a['id'])
+            self.assertEqual(first['title'],'第一段对话')
+            self.assertEqual(first['metadata']['draft'],'')
+            self.assertEqual(first['metadata']['metrics']['used_tokens'],123)
+            self.assertEqual([m['content'] for m in first['messages']],['第一段对话','回答'])
+            self.assertEqual(reopened.get(b['id'])['metadata']['mode'],'agent')
+
+    def test_context_metrics_use_engine_counts(self):
+        job = self.job()
+        events = [{'message':{'content':'测试回答'}},
+                  {'done':True,'prompt_eval_count':12345,'eval_count':37,'eval_duration':1_000_000_000}]
+        response = io.BytesIO(b'\n'.join(json.dumps(e,ensure_ascii=False).encode() for e in events))
+        with patch('agent.urllib.request.build_opener') as factory:
+            factory.return_value.open.return_value = response
+            chat_stream(job,[{'role':'system','content':'规则'},{'role':'user','content':'问题'}],False)
+            payload = json.loads(factory.return_value.open.call_args.args[0].data)
+        self.assertEqual(payload['options']['num_ctx'],262144)
+        self.assertEqual(job.metrics['used_tokens'],12382)
+        self.assertFalse(job.metrics['estimated'])
+        contexts = [e for e in job.events if e['kind']=='context']
+        self.assertTrue(contexts[0]['estimated'])
+        self.assertEqual(contexts[-1]['used_tokens'],12382)
 
     def test_static_viewer_excludes_uploaded_text(self):
         spec = importlib.util.spec_from_file_location('refresh_index', ROOT / 'tools/refresh_index.py')
@@ -143,7 +190,8 @@ print(summary.to_string())
             messages.append({'role':'assistant','content':'','tool_calls':[{'function':{
                 'name':'write_file','arguments':{'path':'analysis.py','content':'print(1)\n'*2000}}}]})
             messages.append({'role':'tool','tool_name':'run_python','content':f'最新执行结果 {i}: 返回码 0'})
-        result=fit_messages(job,messages,True)
+        with patch('agent.CONTEXT_LENGTH',8192), patch('agent.RESPONSE_TOKENS',2048):
+            result=fit_messages(job,messages,True)
         self.assertIn('系统规则',result[0]['content'])
         self.assertIn('保存分析结果',next(x['content'] for x in result if x['role']=='user'))
         self.assertIn('最新执行结果 7',result[-1]['content'])

@@ -45,6 +45,7 @@ const sandbox = {
   markdown: text => String(text),
   history: [], active: null, current: null, polling: false,
   save() {}, notify() {}, api: async () => ({ok: true}),
+  streamEvents: [], updateContext() {}, cacheCurrent() {}, refreshChats() {},
   setTimeout() {},
   fetch: async () => ({json: async () => sandbox.response})
 };
